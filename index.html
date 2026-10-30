@@ -86,6 +86,24 @@ input:disabled{opacity:1;background:transparent;border-color:transparent;color:v
   </div>
 
   <div class="card scroll" id="sumcard" hidden><b>สรุปรวมทุกวิชา</b> <small style="color:var(--mu)">(ค่าเฉลี่ย เกรด ผ่าน/ไม่ผ่าน นับเฉพาะนักศึกษาที่กรอกคะแนนแล้ว · คลิกชื่อวิชาเพื่อเปิดห้องนั้น)</small><div id="sum"></div></div>
+  <details class="card" id="dbcard"><summary style="cursor:pointer;font-weight:600">☁️ ฐานข้อมูล (Google Sheets) <span id="dbst" style="font-weight:400;font-size:13px;color:var(--mu)"></span></summary>
+    <div class="row" style="margin-top:10px">
+      <label style="flex:2;min-width:220px">Web App URL<input id="dburl" placeholder="https://script.google.com/macros/s/.../exec"></label>
+      <label style="flex:1;min-width:140px">รหัสลับ (Token)<input id="dbtok" type="password" autocomplete="off"></label>
+      <label style="flex-direction:row;align-items:center;gap:6px;color:var(--tx)"><input type="checkbox" id="dbauto" style="min-height:0"> ซิงก์อัตโนมัติ</label>
+    </div>
+    <div class="row" style="margin-top:8px"><button class="p" onclick="dbSave()">☁️ บันทึกการตั้งค่า + ซิงก์</button><button onclick="pull(true)">⬇ โหลดจากฐานข้อมูล</button><button onclick="push()">⬆ อัปโหลดตอนนี้</button></div>
+    <details style="margin-top:10px"><summary style="cursor:pointer">วิธีตั้งค่า (ทำครั้งเดียว)</summary>
+      <ol style="line-height:1.7">
+        <li>สร้าง Google Sheet ใหม่ แล้วเลือกเมนู ส่วนขยาย (Extensions) → Apps Script</li>
+        <li>ลบโค้ดเดิม วางโค้ดด้านล่าง แล้วแก้ <b>TOKEN</b> เป็นรหัสลับของคุณเอง</li>
+        <li>กด Deploy → New deployment → ประเภท Web app → Execute as: <b>Me</b>, Who has access: <b>Anyone</b> → Deploy แล้วอนุญาตสิทธิ์</li>
+        <li>คัดลอก Web app URL มาวางด้านบน ใส่รหัสลับเดียวกัน แล้วกด "บันทึกการตั้งค่า + ซิงก์"</li>
+      </ol>
+      <button onclick="copyGAS()">📋 คัดลอกโค้ด Apps Script</button>
+      <pre id="gas" style="overflow:auto;max-height:260px;background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:10px;font-size:12px"></pre>
+      <small style="color:var(--mu)">ชีต "data" เก็บข้อมูลสำรองทั้งระบบ ชีต "คะแนน" เป็นตารางอ่านง่าย (1 แถว = คะแนน 1 รายการของนักศึกษา 1 คน) ถ้าแก้โค้ด Apps Script ต้อง Deploy เวอร์ชันใหม่</small>
+    </details></details>
   <div class="card"><div class="stats" id="stats"></div></div>
 
   <div class="card">
@@ -132,7 +150,7 @@ function grpUI(){var m=!!S.groups;document.getElementById('gfl').style.display=m
     document.getElementById('gf').innerHTML='<option value="">ทั้งหมด ('+S.stu.length+' คน)</option>'+S.groups.map(function(g){return '<option value="'+g+'"'+(g===GF?' selected':'')+'>ห้อง '+gl(g)+' ('+S.stu.filter(function(s){return s.grp===g}).length+' คน)</option>'}).join('');
     document.getElementById('sg').innerHTML=S.groups.map(function(g){return '<option value="'+g+'">'+gl(g)+'</option>'}).join('')}else GF=''}
 function load(){try{var r=localStorage.getItem(KEY);if(r)ALL=JSON.parse(r)}catch(e){}if(!ALL.classes||!ALL.classes.length)seed();mergeClasses();fixNames();S=ALL.classes[ALL.cur]||ALL.classes[0]}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(ALL))}catch(e){}}
+function save(){ALL.savedAt=Date.now();try{localStorage.setItem(KEY,JSON.stringify(ALL))}catch(e){}if(!NOSYNC)sched()}
 function fillSel(){document.getElementById('cls').innerHTML=ALL.classes.map(function(c,i){return '<option value="'+i+'"'+(i===ALL.cur?' selected':'')+'>'+esc(c.subject+' '+c.name+' · ห้อง '+(c.groups||[c.group]).map(gl).join(' + ')+' ('+c.stu.length+' คน)')+'</option>'}).join('')}
 function pick(i){GF='';ALL.cur=+i;S=ALL.classes[ALL.cur];save();render()}
 function uid(){return Math.random().toString(36).slice(2,9)}
@@ -180,6 +198,55 @@ function okAll(){var L=vis().filter(function(s){return !s.ok&&S.cols.some(functi
   if(!L.length){alert('ไม่มีรายการที่รอบันทึก');return}
   if(!confirm('บันทึกยืนยันคะแนน '+L.length+' คนที่กรอกแล้ว?'))return;
   var t=new Date().toLocaleString('th-TH');L.forEach(function(s){s.ok=true;s.at=t});save();render()}
+var CK='score-recorder-cfg',NOSYNC=false,TM=null;
+var GAS=`var TOKEN = 'ตั้งรหัสลับของคุณ';
+function doGet(e) {
+  if (e.parameter.token !== TOKEN) return out({error: 'unauthorized'});
+  var vals = sheet('data').getDataRange().getValues();
+  var txt = vals.map(function (r) { return String(r[0]).slice(1); }).join('');
+  return out({ok: true, state: txt ? JSON.parse(txt) : null});
+}
+function doPost(e) {
+  var d = JSON.parse(e.postData.contents);
+  if (d.token !== TOKEN) return out({error: 'unauthorized'});
+  var lock = LockService.getScriptLock(); lock.waitLock(20000);
+  var json = JSON.stringify(d.state), chunks = [];
+  for (var i = 0; i < json.length; i += 40000) chunks.push(['J' + json.slice(i, i + 40000)]);
+  var sh = sheet('data'); sh.clear();
+  sh.getRange(1, 1, chunks.length, 1).setValues(chunks);
+  var rs = sheet('คะแนน'); rs.clear();
+  if (d.rows && d.rows.length) rs.getRange(1, 1, d.rows.length, d.rows[0].length).setValues(d.rows);
+  lock.releaseLock();
+  return out({ok: true});
+}
+function sheet(n) { var ss = SpreadsheetApp.getActiveSpreadsheet(); return ss.getSheetByName(n) || ss.insertSheet(n); }
+function out(o) { return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }`;
+function cfg(){try{return JSON.parse(localStorage.getItem(CK))||{}}catch(e){return{}}}
+function setSt(t,k){var e=document.getElementById('dbst');if(e){e.textContent=t;e.style.color=k==='bad'?'var(--bad)':k==='ok'?'var(--ok)':'var(--mu)'}}
+function hm(){return new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})}
+function sched(){var c=cfg();if(!c.url||c.auto===false)return;clearTimeout(TM);setSt('⏳ รอซิงก์...');TM=setTimeout(push,1500)}
+function dbRows(){var r=[['วิชา','ชื่อวิชา','ห้อง','กลุ่มเรียน','รหัสนักศึกษา','ชื่อ-สกุล','รายการคะแนน','คะแนนเต็ม','คะแนน','สถานะ','บันทึกเมื่อ']];
+  ALL.classes.forEach(function(c){c.stu.forEach(function(s){var g=s.grp||c.group;c.cols.forEach(function(k){var v=s.sc[k.id];r.push([c.subject,c.name,ROOMS[g]||'',g,s.code,s.name,k.name,k.max,v===undefined?'':v,s.ok?'บันทึกแล้ว':'ยังไม่บันทึก',s.at||''])})})});return r}
+async function push(){var c=cfg();if(!c.url){alert('ตั้งค่าฐานข้อมูลก่อน');return}clearTimeout(TM);setSt('⏳ กำลังบันทึกขึ้นฐานข้อมูล...');
+  try{var r=await fetch(c.url,{method:'POST',body:JSON.stringify({token:c.token||'',state:ALL,rows:dbRows()})});var j=await r.json();
+    if(j.ok)setSt('☁️ บันทึกขึ้นฐานข้อมูลแล้ว '+hm(),'ok');else setSt('✗ '+(j.error==='unauthorized'?'รหัสลับไม่ถูกต้อง':(j.error||'ผิดพลาด')),'bad')}
+  catch(e){setSt('✗ เชื่อมต่อฐานข้อมูลไม่ได้ (ข้อมูลยังบันทึกในเครื่องอยู่)','bad')}}
+async function pull(manual){var c=cfg();if(!c.url){if(manual)alert('ใส่ Web App URL ก่อน');return}
+  setSt('⏳ กำลังตรวจสอบฐานข้อมูล...');
+  try{var r=await fetch(c.url+(c.url.indexOf('?')<0?'?':'&')+'token='+encodeURIComponent(c.token||''));var j=await r.json();
+    if(j.error){setSt('✗ '+(j.error==='unauthorized'?'รหัสลับไม่ถูกต้อง':j.error),'bad');return}
+    var st=j.state;
+    if(!st||!st.classes){push();return}
+    var doLoad=manual?confirm('แทนที่ข้อมูลในเครื่องด้วยข้อมูลจากฐานข้อมูล?'):(st.savedAt||0)>(ALL.savedAt||0);
+    if(doLoad){NOSYNC=true;ALL=st;mergeClasses();fixNames();S=ALL.classes[ALL.cur]||ALL.classes[0];save();NOSYNC=false;render();setSt('⬇ โหลดข้อมูลล่าสุดจากฐานข้อมูลแล้ว '+hm(),'ok')}
+    else if(!manual){if((ALL.savedAt||0)>(st.savedAt||0))push();else setSt('☁️ ข้อมูลตรงกับฐานข้อมูลแล้ว '+hm(),'ok')}
+    else setSt('ยกเลิกการโหลด')}
+  catch(e){setSt('✗ เชื่อมต่อฐานข้อมูลไม่ได้','bad')}}
+function dbSave(){var c={url:document.getElementById('dburl').value.trim(),token:document.getElementById('dbtok').value,auto:document.getElementById('dbauto').checked};
+  try{localStorage.setItem(CK,JSON.stringify(c))}catch(e){}
+  if(!c.url){setSt('ล้างการตั้งค่าแล้ว');return}pull(false)}
+function copyGAS(){try{navigator.clipboard.writeText(GAS).then(function(){alert('คัดลอกโค้ดแล้ว')},function(){alert('คัดลอกไม่สำเร็จ ให้เลือกโค้ดในกรอบแล้วคัดลอกเอง')})}catch(e){alert('คัดลอกไม่สำเร็จ ให้เลือกโค้ดในกรอบแล้วคัดลอกเอง')}}
+function dbInit(){var c=cfg();document.getElementById('dburl').value=c.url||'';document.getElementById('dbtok').value=c.token||'';document.getElementById('dbauto').checked=c.auto!==false;document.getElementById('gas').textContent=GAS;if(c.url)pull(false)}
 function toggleSum(){var e=document.getElementById('sumcard');e.hidden=!e.hidden;if(!e.hidden)buildSum()}
 function sumRefresh(){var e=document.getElementById('sumcard');if(e&&!e.hidden)buildSum()}
 function stats(){sumRefresh();var L=vis(),n=L.length,rs=L.map(calc),avg=n?rs.reduce(function(a,r){return a+r.p},0)/n:0,
@@ -213,7 +280,7 @@ document.getElementById('imp').onchange=function(e){var f=e.target.files[0];if(!
 function resetAll(){if(confirm('ล้างคะแนนและรายการคะแนนทุกวิชา แล้วโหลดรายชื่อตั้งต้นใหม่? ย้อนกลับไม่ได้')){seed();mergeClasses();fixNames();S=ALL.classes[0];save();render()}}
 document.getElementById('sn').onkeydown=function(e){if(e.key==='Enter')addStu()};
 document.getElementById('cn').onkeydown=function(e){if(e.key==='Enter')addCol()};
-load();render();
+load();render();dbInit();
 </script>
 </body>
 </html>
