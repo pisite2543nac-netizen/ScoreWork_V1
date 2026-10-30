@@ -58,6 +58,12 @@ td input.sc{width:58px;min-height:38px}
 #tbl::before{content:'← เลื่อนดูคะแนนซ้าย-ขวา →';display:block;font-size:12px;color:var(--mu);padding-bottom:4px}
 }
 @media print{.card:has(.row),.card:has(#tasks),#sumcard,.sub,button{display:none!important}body{background:#fff;color:#000}}
+:root{--okbg:#ecfdf3}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--okbg:#12301f}}
+#tbl tr.lock td{background:var(--okbg)!important}
+input:disabled{opacity:1;background:transparent;border-color:transparent;color:var(--tx);-webkit-text-fill-color:var(--tx)}
+.tb button{font-weight:600}
+@media print{.tb{display:none!important}}
 </style>
 </head>
 <body>
@@ -96,7 +102,7 @@ td input.sc{width:58px;min-height:38px}
   </div>
 
   <div class="card scroll"><b>รายละเอียดรายการคะแนน / งาน</b> <small style="color:var(--mu)">(แก้ชื่องานและคะแนนเต็มได้ที่นี่ ชื่อจะแสดงแนวตั้งที่หัวตารางด้านล่าง)</small><div id="tasks"></div></div>
-  <div class="card scroll"><div id="tbl"></div></div>
+  <div class="card scroll"><div class="tb" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px"><button class="p" onclick="okAll()">💾 บันทึกทั้งหมด</button><small style="color:var(--mu)">กรอกคะแนนแล้วกด "💾 บันทึก" เพื่อยืนยัน แถวจะล็อก แก้ไขได้ด้วยปุ่ม "✏️ แก้ไข"</small></div><div id="tbl"></div></div>
   <p class="sub">เกณฑ์เกรด: ≥80 = 4 · ≥75 = 3.5 · ≥70 = 3 · ≥65 = 2.5 · ≥60 = 2 · ≥55 = 1.5 · ≥50 = 1 · ต่ำกว่า 50 = 0</p>
 </div>
 
@@ -154,12 +160,12 @@ function copyCols(){if(!S.cols.length){alert('ห้องนี้ยังไ�
   if(!confirm('คัดลอกรายการคะแนนของห้องนี้ไปยังห้องอื่นทั้งหมด? (รายการที่ชื่อและคะแนนเต็มซ้ำกันจะไม่ถูกเพิ่ม คะแนนเดิมไม่หาย)'))return;
   ALL.classes.forEach(function(c){if(c===S)return;S.cols.forEach(function(k){if(!c.cols.some(function(x){return x.name===k.name&&x.max===k.max}))c.cols.push({id:uid(),name:k.name,max:k.max})})});
   save();render();alert('คัดลอกเรียบร้อย')}
-function buildSum(){var h='<table><thead><tr><th class="l">วิชา</th><th>ห้อง (กลุ่มเรียน)</th><th>นศ.</th><th>รายการ</th><th>กรอกแล้ว</th><th>เฉลี่ย %</th><th>เกรดเฉลี่ย</th><th>ผ่าน</th><th>ไม่ผ่าน</th></tr></thead><tbody>';
+function buildSum(){var h='<table><thead><tr><th class="l">วิชา</th><th>ห้อง (กลุ่มเรียน)</th><th>นศ.</th><th>รายการ</th><th>กรอกแล้ว</th><th>ยืนยันแล้ว</th><th>เฉลี่ย %</th><th>เกรดเฉลี่ย</th><th>ผ่าน</th><th>ไม่ผ่าน</th></tr></thead><tbody>';
   ALL.classes.forEach(function(c,i){var m=c.cols.reduce(function(a,k){return a+(+k.max||0)},0);
     (c.groups||[c.group]).forEach(function(g){var L=c.groups?c.stu.filter(function(s){return s.grp===g}):c.stu,n=L.length,ent=0,sp=0,sg=0,pass=0;
       L.forEach(function(s){var t=0,any=false;c.cols.forEach(function(k){var v=parseFloat(s.sc[k.id]);if(!isNaN(v)){t+=v;any=true}});
         if(any){var p=m?t/m*100:0,gr=gradeOf(p);ent++;sp+=p;sg+=gr;if(gr>=1)pass++}});
-      h+='<tr><td class="l"><a href="#" onclick="pick('+i+');return false" style="color:var(--pr)">'+esc(c.subject+' '+c.name)+'</a>'+(c.groups?' <small>🔗 สอนรวม</small>':'')+'</td><td>'+gl(g)+'</td><td>'+n+'</td><td>'+c.cols.length+'</td><td>'+ent+'/'+n+'</td><td>'+(ent?(sp/ent).toFixed(1):'-')+'</td><td>'+(ent?(sg/ent).toFixed(2):'-')+'</td><td class="pass">'+(ent?pass:'-')+'</td><td class="fail">'+(ent?ent-pass:'-')+'</td></tr>'})});
+      h+='<tr><td class="l"><a href="#" onclick="pick('+i+');return false" style="color:var(--pr)">'+esc(c.subject+' '+c.name)+'</a>'+(c.groups?' <small>🔗 สอนรวม</small>':'')+'</td><td>'+gl(g)+'</td><td>'+n+'</td><td>'+c.cols.length+'</td><td>'+ent+'/'+n+'</td><td>'+L.filter(function(s){return s.ok}).length+'/'+n+'</td><td>'+(ent?(sp/ent).toFixed(1):'-')+'</td><td>'+(ent?(sg/ent).toFixed(2):'-')+'</td><td class="pass">'+(ent?pass:'-')+'</td><td class="fail">'+(ent?ent-pass:'-')+'</td></tr>'})});
   document.getElementById('sum').innerHTML=h+'</tbody></table>'}
 function tasks(){var el=document.getElementById('tasks');
   if(!S.cols.length){el.innerHTML='<div class="empty">ยังไม่มีรายการคะแนน เพิ่มได้ที่ช่อง "ชื่อรายการคะแนน" ด้านบน</div>';return}
@@ -168,12 +174,18 @@ function tasks(){var el=document.getElementById('tasks');
   el.innerHTML=h+'<tr><td></td><td class="l"><b>รวมคะแนนเต็ม</b></td><td><b>'+maxTotal()+'</b></td><td></td></tr></tbody></table>'}
 function renCol(id,v){var c=S.cols.find(function(x){return x.id===id});if(c&&v.trim())c.name=v.trim();save();render()}
 function maxCol(id,v){var n=parseFloat(v),c=S.cols.find(function(x){return x.id===id});if(c&&n>0){c.max=n;S.stu.forEach(function(s){if(s.sc[id]>n)s.sc[id]=n})}save();render()}
+function okStu(id){var s=S.stu.find(function(x){return x.id===id});if(!S.cols.some(function(c){return s.sc[c.id]!==undefined})){alert('ยังไม่ได้กรอกคะแนนของ '+s.name);return}s.ok=true;s.at=new Date().toLocaleString('th-TH');save();render()}
+function editStu(id){var s=S.stu.find(function(x){return x.id===id});s.ok=false;delete s.at;save();render()}
+function okAll(){var L=vis().filter(function(s){return !s.ok&&S.cols.some(function(c){return s.sc[c.id]!==undefined})});
+  if(!L.length){alert('ไม่มีรายการที่รอบันทึก');return}
+  if(!confirm('บันทึกยืนยันคะแนน '+L.length+' คนที่กรอกแล้ว?'))return;
+  var t=new Date().toLocaleString('th-TH');L.forEach(function(s){s.ok=true;s.at=t});save();render()}
 function toggleSum(){var e=document.getElementById('sumcard');e.hidden=!e.hidden;if(!e.hidden)buildSum()}
 function sumRefresh(){var e=document.getElementById('sumcard');if(e&&!e.hidden)buildSum()}
 function stats(){sumRefresh();var L=vis(),n=L.length,rs=L.map(calc),avg=n?rs.reduce(function(a,r){return a+r.p},0)/n:0,
   pass=rs.filter(function(r){return r.g>=1}).length,hi=n?Math.max.apply(null,rs.map(function(r){return r.t})):0,lo=n?Math.min.apply(null,rs.map(function(r){return r.t})):0;
   var gpa=n?rs.reduce(function(a,r){return a+r.g},0)/n:0;
-  document.getElementById('stats').innerHTML=[['จำนวนนักศึกษา',n],['คะแนนเต็มรวม',maxTotal()],['ค่าเฉลี่ย (%)',avg.toFixed(1)],['เกรดเฉลี่ยห้อง',gpa.toFixed(2)],['ผ่าน / ไม่ผ่าน',pass+' / '+(n-pass)],['สูงสุด / ต่ำสุด',hi+' / '+lo]]
+  document.getElementById('stats').innerHTML=[['จำนวนนักศึกษา',n],['ยืนยันคะแนนแล้ว',L.filter(function(s){return s.ok}).length+' / '+n],['คะแนนเต็มรวม',maxTotal()],['ค่าเฉลี่ย (%)',avg.toFixed(1)],['เกรดเฉลี่ยห้อง',gpa.toFixed(2)],['ผ่าน / ไม่ผ่าน',pass+' / '+(n-pass)],['สูงสุด / ต่ำสุด',hi+' / '+lo]]
   .map(function(a){return '<div class="st"><b>'+a[1]+'</b><span>'+a[0]+'</span></div>'}).join('')}
 function render(){
   fillSel();tasks();grpUI();
@@ -181,18 +193,18 @@ function render(){
   if(!S.stu.length&&!S.cols.length){el.innerHTML='<div class="empty">เริ่มต้นโดยเพิ่มรายการคะแนน (เช่น สอบกลางภาค) และรายชื่อนักศึกษาด้านบน</div>';stats();return}
   var h='<table><thead><tr><th>#</th><th class="l">รหัส</th><th class="l">ชื่อ-สกุล</th>';
   S.cols.forEach(function(c){h+='<th class="vh" title="'+esc(c.name)+' (เต็ม '+c.max+')"><div class="v">'+esc(c.name)+'</div><small>เต็ม '+c.max+'</small></th>'});
-  h+='<th>รวม</th><th>%</th><th>เกรด</th><th></th></tr></thead><tbody>';
+  h+='<th>รวม</th><th>%</th><th>เกรด</th><th>สถานะ / จัดการ</th></tr></thead><tbody>';
   var lg='',gi=0;vis().forEach(function(s,i){var r=calc(s);
     if(S.groups){if(s.grp!==lg){lg=s.grp;gi=0;h+='<tr><td colspan="'+(S.cols.length+7)+'" class="gh">ห้อง '+gl(lg)+' · '+S.stu.filter(function(x){return x.grp===lg}).length+' คน</td></tr>'}gi++;i=gi-1}
-    h+='<tr id="r'+s.id+'"><td>'+(i+1)+'</td><td class="l"><input value="'+esc(s.code)+'" style="width:100px" onchange="setName(\''+s.id+'\',\'code\',this)"></td>'
-    +'<td class="l"><input class="nm" value="'+esc(s.name)+'" onchange="setName(\''+s.id+'\',\'name\',this)"></td>';
-    S.cols.forEach(function(c){var v=s.sc[c.id];h+='<td><input class="sc" type="number" min="0" max="'+c.max+'" step="any" value="'+(v===undefined?'':v)+'" onchange="setScore(\''+s.id+'\',\''+c.id+'\',this)"></td>'});
-    h+='<td class="t"><b>'+r.t+'</b></td><td class="p">'+r.p.toFixed(1)+'</td><td class="g '+(r.g>=1?'pass':'fail')+'">'+r.g+'</td><td><button class="x" onclick="delStu(\''+s.id+'\')">🗑</button></td></tr>'});
+    h+='<tr id="r'+s.id+'"'+(s.ok?' class="lock"':'')+'><td>'+(i+1)+'</td><td class="l"><input'+(s.ok?' disabled':'')+' value="'+esc(s.code)+'" style="width:100px" onchange="setName(\''+s.id+'\',\'code\',this)"></td>'
+    +'<td class="l"><input class="nm"'+(s.ok?' disabled':'')+' value="'+esc(s.name)+'" onchange="setName(\''+s.id+'\',\'name\',this)"></td>';
+    S.cols.forEach(function(c){var v=s.sc[c.id];h+='<td><input class="sc" type="number" min="0" max="'+c.max+'" step="any"'+(s.ok?' disabled':'')+' value="'+(v===undefined?'':v)+'" onchange="setScore(\''+s.id+'\',\''+c.id+'\',this)"></td>'});
+    h+='<td class="t"><b>'+r.t+'</b></td><td class="p">'+r.p.toFixed(1)+'</td><td class="g '+(r.g>=1?'pass':'fail')+'">'+r.g+'</td><td style="white-space:nowrap">'+(s.ok?'<span class="pass" title="'+esc(s.at||'')+'">✓ บันทึกแล้ว</span> <button onclick="editStu(\''+s.id+'\')">✏️ แก้ไข</button>':'<button class="p" onclick="okStu(\''+s.id+'\')">💾 บันทึก</button>')+' <button class="x" onclick="delStu(\''+s.id+'\')">🗑</button></td></tr>'});
   if(!S.stu.length)h+='<tr><td colspan="'+(S.cols.length+7)+'" class="empty">ยังไม่มีรายชื่อนักศึกษา</td></tr>';
   el.innerHTML=h+'</tbody></table>';stats()}
 function dl(name,text,type){var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:type}));a.download=name;a.click()}
-function exportCSV(){var rows=[['ลำดับ','รหัส','ชื่อ-สกุล','ห้อง (กลุ่มเรียน)'].concat(S.cols.map(function(c){return c.name+' ('+c.max+')'}),['รวม','ร้อยละ','เกรด'])];
-  var sv=S.groups?[].concat.apply([],S.groups.map(function(g){return S.stu.filter(function(s){return s.grp===g})})):S.stu;sv.forEach(function(s,i){var r=calc(s);rows.push([i+1,s.code,s.name,gl(s.grp||S.group)].concat(S.cols.map(function(c){return s.sc[c.id]===undefined?'':s.sc[c.id]}),[r.t,r.p.toFixed(1),r.g]))});
+function exportCSV(){var rows=[['ลำดับ','รหัส','ชื่อ-สกุล','ห้อง (กลุ่มเรียน)'].concat(S.cols.map(function(c){return c.name+' ('+c.max+')'}),['รวม','ร้อยละ','เกรด','สถานะ'])];
+  var sv=S.groups?[].concat.apply([],S.groups.map(function(g){return S.stu.filter(function(s){return s.grp===g})})):S.stu;sv.forEach(function(s,i){var r=calc(s);rows.push([i+1,s.code,s.name,gl(s.grp||S.group)].concat(S.cols.map(function(c){return s.sc[c.id]===undefined?'':s.sc[c.id]}),[r.t,r.p.toFixed(1),r.g,s.ok?'บันทึกแล้ว':'ยังไม่บันทึก']))});
   var csv='\ufeff'+rows.map(function(r){return r.map(function(v){return '"'+String(v).replace(/"/g,'""')+'"'}).join(',')}).join('\r\n');
   dl(S.subject+'_'+(S.groups?S.groups.join('_'):S.group)+'.csv',csv,'text/csv')}
 function exportJSON(){dl('score-backup.json',JSON.stringify(ALL),'application/json')}
