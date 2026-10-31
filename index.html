@@ -1,286 +1,228 @@
 <!DOCTYPE html>
-<html lang="th">
-<head>
+<html lang="th"><head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>ระบบบันทึกคะแนนนักศึกษา</title>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <style>
-:root{--bg:#f4f6fb;--card:#fff;--tx:#1b2333;--mu:#6b7487;--bd:#dde2ee;--pr:#2f5bea;--prt:#fff;--ok:#16a34a;--bad:#dc2626;--hd:#eef2ff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1420;--card:#192030;--tx:#e7ebf5;--mu:#9aa4ba;--bd:#2b3550;--pr:#6c8cff;--prt:#0f1420;--hd:#202a44;color-scheme:dark}}
+:root{--bg:#f3f6fb;--card:#fff;--tx:#1b2433;--mut:#64708a;--pri:#1d4ed8;--bd:#d6deec;--ok:#dcfce7;--hd:#e8efff;--err:#b91c1c}
+@media(prefers-color-scheme:dark){:root{--bg:#0f1624;--card:#18223a;--tx:#e6ecf8;--mut:#93a0bd;--pri:#6b9bff;--bd:#2c3a5c;--ok:#12391f;--hd:#1f2d4d;--err:#f87171}}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--tx);font-family:'Sarabun',system-ui,sans-serif;font-size:15px}
-.wrap{max-width:1100px;margin:0 auto;padding:16px}
-h1{font-size:22px;margin:0 0 2px}.sub{color:var(--mu);margin:0 0 14px}
-.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:14px}
-.row{display:flex;flex-wrap:wrap;gap:8px;align-items:end}
-label{display:flex;flex-direction:column;font-size:13px;color:var(--mu);gap:3px}
-select,input{font:inherit;color:var(--tx);background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:7px 9px;min-width:0}
-input:focus{outline:2px solid var(--pr);outline-offset:-1px}
-button{font:inherit;cursor:pointer;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:8px;padding:7px 12px}
-button.p{background:var(--pr);color:var(--prt);border-color:var(--pr);font-weight:600}
-button.x{color:var(--bad);padding:2px 7px}
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
-.st{background:var(--hd);border-radius:10px;padding:10px}.st b{display:block;font-size:22px}.st span{font-size:12px;color:var(--mu)}
-.scroll{overflow-x:auto}
-table{border-collapse:collapse;width:100%;min-width:640px}
-th,td{border-bottom:1px solid var(--bd);padding:6px 8px;text-align:center;white-space:nowrap}
-th{background:var(--hd);font-size:13px}
+body{margin:0;font-family:Sarabun,sans-serif;background:var(--bg);color:var(--tx);padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+header{background:var(--pri);color:#fff;padding:10px 14px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+header b{font-size:18px;flex:1}header small{opacity:.9}
+main{padding:12px;max-width:1400px;margin:auto}
+button,select,input{font:inherit;font-size:16px}
+button{background:var(--pri);color:#fff;border:0;border-radius:8px;padding:9px 13px;cursor:pointer;min-height:40px}
+button.s{background:var(--card);color:var(--pri);border:1px solid var(--bd)}button.d{background:var(--err)}button:disabled{opacity:.45;cursor:not-allowed}
+header button{background:rgba(255,255,255,.2)}
+select,input{background:var(--card);color:var(--tx);border:1px solid var(--bd);border-radius:8px;padding:8px;min-height:40px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:12px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+.login{max-width:360px;margin:12vh auto;display:grid;gap:10px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
+.stats div{background:var(--hd);border-radius:10px;padding:8px;text-align:center}.stats b{display:block;font-size:20px}.stats span{font-size:13px;color:var(--mut)}
+.wrap{overflow:auto;max-height:75vh;border:1px solid var(--bd);border-radius:10px}
+table{border-collapse:separate;border-spacing:0;width:100%;background:var(--card)}
+th,td{border-bottom:1px solid var(--bd);border-right:1px solid var(--bd);padding:4px 6px;text-align:center;white-space:nowrap}
+th{background:var(--hd);position:sticky;top:0;z-index:2}
 td.l,th.l{text-align:left}
-td input.sc{width:64px;text-align:center;padding:5px}
-td input.nm{width:100%;min-width:150px}
-.g{font-weight:700}.fail{color:var(--bad)}.pass{color:var(--ok)}
-.gh{text-align:left;background:var(--pr);color:var(--prt);font-weight:700;padding:6px 10px}
-.vh{vertical-align:bottom;height:150px;min-width:44px;padding:6px 4px}.v{writing-mode:vertical-rl;transform:rotate(180deg);margin:0 auto 4px;white-space:normal;max-height:140px;overflow:hidden;font-weight:600;line-height:1.2}
-.empty{color:var(--mu);padding:20px;text-align:center}
-.wrap{max-width:1400px;padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right))}
-.scroll{-webkit-overflow-scrolling:touch}
-button,select{min-height:38px}
-#tbl table{border-collapse:separate;border-spacing:0}
-#tbl th:nth-child(-n+3),#tbl td:nth-child(-n+3){position:sticky;background:var(--card);z-index:2}
-#tbl th:nth-child(-n+3){background:var(--hd);z-index:3}
-#tbl th:nth-child(1),#tbl td:nth-child(1){left:0;min-width:36px;width:36px}
-#tbl th:nth-child(2),#tbl td:nth-child(2){left:36px;min-width:112px;width:112px}
-#tbl th:nth-child(3),#tbl td:nth-child(3){left:148px;min-width:170px;box-shadow:2px 0 0 var(--bd)}
-#tbl td.gh{position:static;width:auto;min-width:0;background:var(--pr);box-shadow:none}
-@media (max-width:640px){
-.wrap{padding:10px}
-h1{font-size:19px}
-.row>label{flex:1 1 100%!important;min-width:0!important}
-.row>button{flex:1 1 calc(50% - 4px)}
-.row>span{display:none}
-input,select,button{font-size:16px;min-height:42px}
-td input.sc{width:58px;min-height:38px}
-#tbl th:nth-child(2),#tbl td:nth-child(2){display:none}
-#tbl th:nth-child(3),#tbl td:nth-child(3){left:36px;min-width:130px}
-#tbl td:nth-child(3) input.nm{min-width:0;width:120px}
-.stats{grid-template-columns:repeat(2,1fr)}
-#tbl::before{content:'← เลื่อนดูคะแนนซ้าย-ขวา →';display:block;font-size:12px;color:var(--mu);padding-bottom:4px}
-}
-@media print{.card:has(.row),.card:has(#tasks),#sumcard,.sub,button{display:none!important}body{background:#fff;color:#000}}
-:root{--okbg:#ecfdf3}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--okbg:#12301f}}
-#tbl tr.lock td{background:var(--okbg)!important}
-input:disabled{opacity:1;background:transparent;border-color:transparent;color:var(--tx);-webkit-text-fill-color:var(--tx)}
-.tb button{font-weight:600}
-@media print{.tb{display:none!important}}
-</style>
-</head>
-<body>
-<div class="wrap">
-  <h1>📒 ระบบบันทึกคะแนนนักศึกษา</h1>
-  <p class="sub">ข้อมูลบันทึกในเบราว์เซอร์นี้อัตโนมัติ · สำรองได้ด้วยปุ่มส่งออก</p>
-
-  <div class="card">
-    <div class="row">
-      <label style="flex:2;min-width:240px">เลือกวิชา / กลุ่มเรียน<select id="cls" onchange="pick(this.value)"></select></label>
-      <label id="gfl" style="display:none">แสดงกลุ่ม<select id="gf" onchange="GF=this.value;render()"></select></label>
-      <button onclick="copyCols()">📋 คัดลอกรายการคะแนนไปทุกห้อง</button>
-      <button onclick="toggleSum()">📊 สรุปรวมทุกวิชา</button>
-      <button onclick="exportCSV()">⬇ ส่งออก CSV</button>
-      <button onclick="exportJSON()">💾 สำรองข้อมูล</button>
-      <button onclick="document.getElementById('imp').click()">📂 นำเข้าข้อมูลสำรอง</button>
-      <input type="file" id="imp" accept=".json" hidden>
-      <button class="x" onclick="resetAll()">รีเซ็ตทั้งหมด</button>
-    </div>
-  </div>
-
-  <div class="card scroll" id="sumcard" hidden><b>สรุปรวมทุกวิชา</b> <small style="color:var(--mu)">(ค่าเฉลี่ย เกรด ผ่าน/ไม่ผ่าน นับเฉพาะนักศึกษาที่กรอกคะแนนแล้ว · คลิกชื่อวิชาเพื่อเปิดห้องนั้น)</small><div id="sum"></div></div>
-  <details class="card" id="dbcard"><summary style="cursor:pointer;font-weight:600">☁️ ฐานข้อมูล (Google Sheets) <span id="dbst" style="font-weight:400;font-size:13px;color:var(--mu)"></span></summary>
-    <div class="row" style="margin-top:10px">
-      <label style="flex:2;min-width:220px">Web App URL<input id="dburl" placeholder="https://script.google.com/macros/s/.../exec"></label>
-      <label style="flex:1;min-width:140px">รหัสลับ (Token)<input id="dbtok" type="password" autocomplete="off"></label>
-      <label style="flex-direction:row;align-items:center;gap:6px;color:var(--tx)"><input type="checkbox" id="dbauto" style="min-height:0"> ซิงก์อัตโนมัติ</label>
-    </div>
-    <div class="row" style="margin-top:8px"><button class="p" onclick="dbSave()">☁️ บันทึกการตั้งค่า + ซิงก์</button><button onclick="pull(true)">⬇ โหลดจากฐานข้อมูล</button><button onclick="push()">⬆ อัปโหลดตอนนี้</button></div>
-    <details style="margin-top:10px"><summary style="cursor:pointer">วิธีตั้งค่า (ทำครั้งเดียว)</summary>
-      <ol style="line-height:1.7">
-        <li>สร้าง Google Sheet ใหม่ แล้วเลือกเมนู ส่วนขยาย (Extensions) → Apps Script</li>
-        <li>ลบโค้ดเดิม วางโค้ดด้านล่าง แล้วแก้ <b>TOKEN</b> เป็นรหัสลับของคุณเอง</li>
-        <li>กด Deploy → New deployment → ประเภท Web app → Execute as: <b>Me</b>, Who has access: <b>Anyone</b> → Deploy แล้วอนุญาตสิทธิ์</li>
-        <li>คัดลอก Web app URL มาวางด้านบน ใส่รหัสลับเดียวกัน แล้วกด "บันทึกการตั้งค่า + ซิงก์"</li>
-      </ol>
-      <button onclick="copyGAS()">📋 คัดลอกโค้ด Apps Script</button>
-      <pre id="gas" style="overflow:auto;max-height:260px;background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:10px;font-size:12px"></pre>
-      <small style="color:var(--mu)">ชีต "data" เก็บข้อมูลสำรองทั้งระบบ ชีต "คะแนน" เป็นตารางอ่านง่าย (1 แถว = คะแนน 1 รายการของนักศึกษา 1 คน) ถ้าแก้โค้ด Apps Script ต้อง Deploy เวอร์ชันใหม่</small>
-    </details></details>
-  <div class="card"><div class="stats" id="stats"></div></div>
-
-  <div class="card">
-    <div class="row">
-      <label id="sgl" style="display:none">กลุ่มเรียน<select id="sg"></select></label>
-      <label>รหัสนักศึกษา<input id="sc" placeholder="รหัส"></label>
-      <label style="flex:1;min-width:180px">ชื่อ-สกุล<input id="sn" placeholder="ชื่อ-สกุล"></label>
-      <button class="p" onclick="addStu()">+ เพิ่มนักศึกษา</button>
-      <span style="width:16px"></span>
-      <label>ชื่อรายการคะแนน<input id="cn" placeholder="เช่น สอบกลางภาค"></label>
-      <label>คะแนนเต็ม<input id="cm" type="number" min="1" value="10" style="width:90px"></label>
-      <button class="p" onclick="addCol()">+ เพิ่มรายการ</button>
-    </div>
-  </div>
-
-  <div class="card scroll"><b>รายละเอียดรายการคะแนน / งาน</b> <small style="color:var(--mu)">(แก้ชื่องานและคะแนนเต็มได้ที่นี่ ชื่อจะแสดงแนวตั้งที่หัวตารางด้านล่าง)</small><div id="tasks"></div></div>
-  <div class="card scroll"><div class="tb" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px"><button class="p" onclick="okAll()">💾 บันทึกทั้งหมด</button><small style="color:var(--mu)">กรอกคะแนนแล้วกด "💾 บันทึก" เพื่อยืนยัน แถวจะล็อก แก้ไขได้ด้วยปุ่ม "✏️ แก้ไข"</small></div><div id="tbl"></div></div>
-  <p class="sub">เกณฑ์เกรด: ≥80 = 4 · ≥75 = 3.5 · ≥70 = 3 · ≥65 = 2.5 · ≥60 = 2 · ≥55 = 1.5 · ≥50 = 1 · ต่ำกว่า 50 = 0</p>
-</div>
-
+.c1{position:sticky;left:0;z-index:1;background:inherit;min-width:42px}.c2{position:sticky;left:42px;z-index:1;background:inherit;min-width:110px}.c3{position:sticky;left:152px;z-index:1;background:inherit;min-width:190px}
+td.c1,td.c2,td.c3{background:var(--card)}tr.ok td{background:var(--ok)!important}th.c1,th.c2,th.c3{z-index:3}
+.v{writing-mode:vertical-rl;transform:rotate(180deg);height:150px;white-space:normal;margin:auto;font-weight:600}
+td input{width:62px;text-align:center;padding:6px}
+tr.band td{background:var(--hd)!important;text-align:left;font-weight:700;position:static}
+.tag{color:#15803d;font-size:13px}.mut{color:var(--mut);font-size:13px}.err{color:var(--err)}
+@media(max-width:700px){.c2{display:none}.c3{left:42px;min-width:130px}}
+@media print{header,.noprint{display:none!important}.wrap{max-height:none;overflow:visible}body{background:#fff;color:#000}}
+</style></head><body>
+<header><b>📘 ระบบบันทึกคะแนนนักศึกษา</b><small id="who"></small><small id="sync"></small><button id="out" hidden>ออกจากระบบ</button></header>
+<main id="app"></main>
 <script>
-var DATA=[{"subject":"20000-2004","name":"กิจกรรมองค์การวิชาชีพ 1","group":"682190101","students":[{"code":"68219010001","name":"นางสาวจิดาภา อ่อนนางรอง"},{"code":"68219010002","name":"นายจิรวุฒิ บุตรดี"},{"code":"68219010003","name":"นางสาวจีรนันท์ ร่วมกูล"},{"code":"68219010004","name":"นางสาวชญานิษฐ์ ชูบัวทอง"},{"code":"68219010005","name":"นางสาวชญานุช บัวชุ่ม"},{"code":"68219010006","name":"นายณพณัฐ ชำนิพันธ์"},{"code":"68219010007","name":"นางสาวณัฐฐาพร วงเวียน"},{"code":"68219010008","name":"นายทักษกร มณีเนตร"},{"code":"68219010009","name":"นายธนพัฒน์ พิทักษี"},{"code":"68219010010","name":"นายธิติวุฒิ กองศักดิ์"},{"code":"68219010011","name":"นางสาวนภัสวรรณ ช่างน้อย"},{"code":"68219010013","name":"นางสาวประภัสรา ทวีพูน"},{"code":"68219010014","name":"นายปุณพจน์ ศรีบุญมา"},{"code":"68219010018","name":"นางสาวรัตติกาล ทองโพธิ์"},{"code":"68219010020","name":"นายวุฒิพงศ์ มาลาลํ้า"},{"code":"68219010021","name":"นายสิทธินนท์ โพยประโคน"},{"code":"68219010022","name":"นายสุทธิพงศ์ จารุตันติ์"},{"code":"68219010023","name":"นางสาวอมราพร พลเดช"},{"code":"68219010024","name":"นางสาวอรอนงค์ ครุภัณฑ์"},{"code":"68219010026","name":"นายไอยเรศ เหลือถนอม"}]},{"subject":"21910-2018","name":"คอมพิวเตอร์และการบำรุงรักษา","group":"692191001","students":[{"code":"69219100002","name":"นางสาวชมพูนุช ปรีชาพูด"},{"code":"69219100003","name":"นางสาวชุติมา พาลี"},{"code":"69219100005","name":"นางสาวณัฐญาภรณ์ จัตุกุล"},{"code":"69219100007","name":"นางสาวปัณฑิตา คะพันธ์"},{"code":"69219100009","name":"นายปัณณวิชญ์ คะพันธ์"},{"code":"69219100011","name":"นางสาวภัทรชนก ยิ้มแย้ม"},{"code":"69219100012","name":"นายภัทรพงค์ สงกูล"},{"code":"69219100014","name":"นางสาวเมธิรา เณรกูล"},{"code":"69219100015","name":"นางสาวลัดดาวรรณ แก้วปรือ"},{"code":"69219100016","name":"นางสาววรดา แสนเดช"},{"code":"69219100017","name":"นางสาววรรณนิษา ศิริงาม"},{"code":"69219100018","name":"นายวรินทร นามทอง"},{"code":"69219100020","name":"นางสาวอภิญญา สุริยะประสิทธิ์"},{"code":"69219100021","name":"นางสาวอรกาญจน์ ระบือนาม"},{"code":"69219100022","name":"นางสาวสุจินันท์ กิรัมย์"}]},{"subject":"30000-2002","name":"กิจกรรมองค์การวิชาชีพ 1","group":"693191002","students":[{"code":"69319100021","name":"นายกิตติ น่าชม"},{"code":"69319100022","name":"นางสาวกิตติกา ศิริเวช"},{"code":"69319100023","name":"นางสาวจุฑาภรณ์ ปานชาติ"},{"code":"69319100027","name":"นางสาวธัญนันท์ เพ็ชรกลั่นพะเนา"},{"code":"69319100028","name":"นางสาวนวรัตน์ รามัญ"},{"code":"69319100030","name":"นายปฏิการ ภู่ทอง"},{"code":"69319100031","name":"นางสาวปาริตา คนหลัก"},{"code":"69319100032","name":"นางสาวผกายศรี สิงห์เย็น"},{"code":"69319100033","name":"นางสาวพัฒน์นรี เพียบประโคน"},{"code":"69319100035","name":"นางสาวเพียงขวัญ โสกูล"},{"code":"69319100036","name":"นางสาวภัทรภรณ์ พรมประสาทสร"},{"code":"69319100037","name":"นายภีรภัทร สุริยะประสิทธิ์"},{"code":"69319100038","name":"นายยศวรรธน์ เรืองนาม"},{"code":"69319100041","name":"นางสาวศิริประภาภรณป์ ระทุม"},{"code":"69319100042","name":"นายศุกลวัฒน์ ทิมาตะฤกะ"},{"code":"69319100044","name":"นางสาววรินทร เวียงสมุทร"},{"code":"69319100048","name":"นางสาวนิชาดา ยันทะแย้ม"}]},{"subject":"31900-0002","name":"การเขียนโปรแกรมคอมพิวเตอร์","group":"693190102","students":[{"code":"69319010012","name":"นางสาวธนัชชา ตันกระโทก"},{"code":"69319010013","name":"นางสาวพรทิพย์ แก้วเกตุ"},{"code":"69319010014","name":"นางสาวมินตรา สมพงค์"},{"code":"69319010015","name":"นายสราวุธ บุญเกิด"},{"code":"69319010016","name":"นางสาวสิริภร เทพนรินทร์"},{"code":"69319010017","name":"นายสุขเกษม นิยมรัตน์"},{"code":"69319010018","name":"นางสาวสุชาวดี อ่อนเขนย"},{"code":"69319010019","name":"นางสาวสุดารัตน์ บุญโถ"},{"code":"69319010022","name":"นางสาวไอริษา เมฆปะคำ"}]},{"subject":"31900-1001","name":"กฎหมายในงานอาชีพอุตสาหกรรม","group":"683190102","students":[{"code":"68319010014","name":"นางสาวกมลพิชญ์ คงทิพย์"},{"code":"68319010015","name":"นายถิรวัฒน์ อโนศรี"},{"code":"68319010016","name":"นายนภาพล ทิพยจันทร์"},{"code":"68319010017","name":"นายนิติภูมิ พิมเสน"},{"code":"68319010018","name":"นายภากร เนาวิรัตน์"},{"code":"68319010019","name":"นายสรวิศ มั่นยืน"},{"code":"68319010020","name":"นายสหัสสะเดชะ เอี่ยมสำอางค์"},{"code":"68319010021","name":"นายสุทธิพงษ์ เรืองแสงทองกุล"},{"code":"68319010022","name":"นางสาวอภิญญา ขำวงค์"},{"code":"68319010023","name":"นายปุณณสิน ภาคเพียร"},{"code":"68319010024","name":"นายจักรพันธ์ คํ่าคูณ"}]},{"subject":"31900-1001","name":"กฎหมายในงานอาชีพอุตสาหกรรม","group":"693190101","students":[{"code":"69319010001","name":"นางสาวชญานิษฐ์ กาสีพวง"},{"code":"69319010002","name":"นายตรีเทพ ปะกิริโย"},{"code":"69319010003","name":"นายทิวากร พุทธิชาติ"},{"code":"69319010005","name":"นายเธียร พงศ์สุปาณี"},{"code":"69319010006","name":"นางสาวเบญจรัตน์ โตพังเทียม"},{"code":"69319010007","name":"นางสาวพานิก นุชผักแว่น"},{"code":"69319010008","name":"นายภัทรพล ทีฆะสุข"},{"code":"69319010009","name":"นางสาวศาสนตรส คุ้นเคย"},{"code":"69319010010","name":"นายศิริบุตร เซ็นปักธงชัย"},{"code":"69319010011","name":"นายสุภวัชร์ สุวรรณหงษ์"},{"code":"69319010023","name":"นายภาณุวัฒน์ รัตนศรี"},{"code":"69319010024","name":"นางสาวกนกวรรณ เงินสยาม"},{"code":"69319010025","name":"นายพีรภัทร เอี่ยมสุรา"},{"code":"69319010026","name":"นายธีรพงษ์ คำเอี่ยมดี"}]},{"subject":"31901-2001","name":"การออกแบบส่วนติดต่อผู้ใช้ขั้นสูง","group":"693190102","students":[{"code":"69319010012","name":"นางสาวธนัชชา ตันกระโทก"},{"code":"69319010013","name":"นางสาวพรทิพย์ แก้วเกตุ"},{"code":"69319010014","name":"นางสาวมินตรา สมพงค์"},{"code":"69319010015","name":"นายสราวุธ บุญเกิด"},{"code":"69319010016","name":"นางสาวสิริภร เทพนรินทร์"},{"code":"69319010017","name":"นายสุขเกษม นิยมรัตน์"},{"code":"69319010018","name":"นางสาวสุชาวดี อ่อนเขนย"},{"code":"69319010019","name":"นางสาวสุดารัตน์ บุญโถ"},{"code":"69319010022","name":"นางสาวไอริษา เมฆปะคำ"}]},{"subject":"31901-2005","name":"การพัฒนาซอฟต์แวร์ด้วยเทคโนโลยี","group":"683190101","students":[{"code":"68319010002","name":"นายกฤตัชญ์ สีสันต์"},{"code":"68319010003","name":"นางสาวกันติมา ดีมีชาติ"},{"code":"68319010004","name":"นายกิตติกร ละเอียด"},{"code":"68319010005","name":"นางสาวชนินาถ ใจดี"},{"code":"68319010006","name":"นายนันทวัฒน์ กุลจันทร์"},{"code":"68319010008","name":"นางสาวพิมพ์ชนก เข็มนางรอง"},{"code":"68319010009","name":"นายพีรภัทร พยุงกลาง"},{"code":"68319010010","name":"นางสาววาสนา อุยเอก"},{"code":"68319010011","name":"นายสิทธิพันธ์ พานทอง"},{"code":"68319010012","name":"นางสาวสุพิชชา โนราช"}]},{"subject":"31901-2005","name":"การพัฒนาซอฟต์แวร์ด้วยเทคโนโลยี","group":"693190102","students":[{"code":"69319010012","name":"นางสาวธนัชชา ตันกระโทก"},{"code":"69319010013","name":"นางสาวพรทิพย์ แก้วเกตุ"},{"code":"69319010014","name":"นางสาวมินตรา สมพงค์"},{"code":"69319010015","name":"นายสราวุธ บุญเกิด"},{"code":"69319010016","name":"นางสาวสิริภร เทพนรินทร์"},{"code":"69319010017","name":"นายสุขเกษม นิยมรัตน์"},{"code":"69319010018","name":"นางสาวสุชาวดี อ่อนเขนย"},{"code":"69319010019","name":"นางสาวสุดารัตน์ บุญโถ"},{"code":"69319010022","name":"นางสาวไอริษา เมฆปะคำ"}]},{"subject":"31901-2008","name":"การพัฒนาซอฟต์แวร์รูปแบบเดฟออปส์","group":"683190101","students":[{"code":"68319010002","name":"นายกฤตัชญ์ สีสันต์"},{"code":"68319010003","name":"นางสาวกันติมา ดีมีชาติ"},{"code":"68319010004","name":"นายกิตติกร ละเอียด"},{"code":"68319010005","name":"นางสาวชนินาถ ใจดี"},{"code":"68319010006","name":"นายนันทวัฒน์ กุลจันทร์"},{"code":"68319010008","name":"นางสาวพิมพ์ชนก เข็มนางรอง"},{"code":"68319010009","name":"นายพีรภัทร พยุงกลาง"},{"code":"68319010010","name":"นางสาววาสนา อุยเอก"},{"code":"68319010011","name":"นายสิทธิพันธ์ พานทอง"},{"code":"68319010012","name":"นางสาวสุพิชชา โนราช"}]},{"subject":"31901-2008","name":"การพัฒนาซอฟต์แวร์รูปแบบเดฟออปส์","group":"683190102","students":[{"code":"68319010014","name":"นางสาวกมลพิชญ์ คงทิพย์"},{"code":"68319010015","name":"นายถิรวัฒน์ อโนศรี"},{"code":"68319010016","name":"นายนภาพล ทิพยจันทร์"},{"code":"68319010017","name":"นายนิติภูมิ พิมเสน"},{"code":"68319010018","name":"นายภากร เนาวิรัตน์"},{"code":"68319010019","name":"นายสรวิศ มั่นยืน"},{"code":"68319010020","name":"นายสหัสสะเดชะ เอี่ยมสำอางค์"},{"code":"68319010021","name":"นายสุทธิพงษ์ เรืองแสงทองกุล"},{"code":"68319010022","name":"นางสาวอภิญญา ขำวงค์"},{"code":"68319010023","name":"นายปุณณสิน ภาคเพียร"},{"code":"68319010024","name":"นายจักรพันธ์ คํ่าคูณ"}]},{"subject":"31910-2004","name":"หลักการคิดเชิงออกแบบและนวัตกรรม","group":"683191002","students":[{"code":"68319100023","name":"นางสาวกฤษณพร แสนเดช"},{"code":"68319100025","name":"นางสาวจารุมน พรมมาสม"},{"code":"68319100026","name":"นางสาวชลธิชา เส็งแข่งขัน"},{"code":"68319100027","name":"นางสาวชลธิชา แสนกล้า"},{"code":"68319100028","name":"นางสาวชลิตา คล้ายตะคุ"},{"code":"68319100029","name":"นางสาวโยษิตา จำนงเพียร"},{"code":"68319100030","name":"นายธนภัทร ขาวก้านเหลือง"},{"code":"68319100031","name":"นายธนากร ธีรภัทรวรากร"},{"code":"68319100034","name":"นางสาววรางคณา สักเหลา"},{"code":"68319100036","name":"นางสาวศิริพร จอนโพกลาง"},{"code":"68319100037","name":"นายสรชา นาคะพงษ์"},{"code":"68319100039","name":"นางสาวสุภาวรรณ สิงห์ทอง"},{"code":"68319100040","name":"นางสาวอริสรา ยางงาม"},{"code":"68319100042","name":"นายปภาวิน ตันสุริวงศ์"},{"code":"68319100043","name":"นางสาวนริสรา ชาภักดี"}]},{"subject":"31910-2018","name":"การผลิตสื่อมัลติมีเดียสำหรับธุรกิจดิจิทัล","group":"683191001","students":[{"code":"68319100001","name":"นางสาวกมลลักษณ์ กลิ่นบุหงา"},{"code":"68319100002","name":"นางสาวจีรพรรณ บุตรพรม"},{"code":"68319100003","name":"นางสาวชนม์นิภา โถทอง"},{"code":"68319100004","name":"นางสาวชลธิชา เข็มบุบผา"},{"code":"68319100005","name":"นางสาวฐิตาสิริ ประจง"},{"code":"68319100006","name":"นางสาวณัฐกานต์ หลอดทอง"},{"code":"68319100007","name":"นายณัฐพงศ์ โสกูล"},{"code":"68319100008","name":"นายณัฐภัทร ดีสวาสดิ์"},{"code":"68319100009","name":"นายธนภัทร แสนเดช"},{"code":"68319100010","name":"นางสาวธัญญารัตน์ ลอดจันทร์พะเนา"},{"code":"68319100011","name":"นายธนพิพัฒน์ อินทร์บุญ"},{"code":"68319100012","name":"นางสาวนรัทยา ดีสวัสดิ์"},{"code":"68319100013","name":"นายนันทวัฒชัย สิริประโคน"},{"code":"68319100014","name":"นางสาวปาริชาติ ผดากาญ"},{"code":"68319100015","name":"นางสาวฟ้าใส เปียมเงิน"},{"code":"68319100016","name":"นางสาวฟ้าใส สันกระโทก"},{"code":"68319100017","name":"นายมินทร์ธดา เกษรนวล"},{"code":"68319100019","name":"นายวรพล แช่มรัมย์"},{"code":"68319100020","name":"นางสาวสุภัชชา กันทาสี"},{"code":"68319100021","name":"นายอานนท์ ทองทรัพย์"},{"code":"68319100035","name":"นายวีรชัย คำตา"}]},{"subject":"31910-2026","name":"โปรแกรมกราฟิกสำหรับการออกแบบ","group":"683191002","students":[{"code":"68319100023","name":"นางสาวกฤษณพร แสนเดช"},{"code":"68319100025","name":"นางสาวจารุมน พรมมาสม"},{"code":"68319100026","name":"นางสาวชลธิชา เส็งแข่งขัน"},{"code":"68319100027","name":"นางสาวชลธิชา แสนกล้า"},{"code":"68319100028","name":"นางสาวชลิตา คล้ายตะคุ"},{"code":"68319100029","name":"นางสาวโยษิตา จำนงเพียร"},{"code":"68319100030","name":"นายธนภัทร ขาวก้านเหลือง"},{"code":"68319100031","name":"นายธนากร ธีรภัทรวรากร"},{"code":"68319100034","name":"นางสาววรางคณา สักเหลา"},{"code":"68319100036","name":"นางสาวศิริพร จอนโพกลาง"},{"code":"68319100037","name":"นายสรชา นาคะพงษ์"},{"code":"68319100039","name":"นางสาวสุภาวรรณ สิงห์ทอง"},{"code":"68319100040","name":"นางสาวอริสรา ยางงาม"},{"code":"68319100042","name":"นายปภาวิน ตันสุริวงศ์"},{"code":"68319100043","name":"นางสาวนริสรา ชาภักดี"}]},{"subject":"31910-2029","name":"โครงงานด้านเทคโนโลยีธุรกิจดิจิทัล","group":"683191002","students":[{"code":"68319100023","name":"นางสาวกฤษณพร แสนเดช"},{"code":"68319100025","name":"นางสาวจารุมน พรมมาสม"},{"code":"68319100026","name":"นางสาวชลธิชา เส็งแข่งขัน"},{"code":"68319100027","name":"นางสาวชลธิชา แสนกล้า"},{"code":"68319100028","name":"นางสาวชลิตา คล้ายตะคุ"},{"code":"68319100029","name":"นางสาวโยษิตา จำนงเพียร"},{"code":"68319100030","name":"นายธนภัทร ขาวก้านเหลือง"},{"code":"68319100031","name":"นายธนากร ธีรภัทรวรากร"},{"code":"68319100034","name":"นางสาววรางคณา สักเหลา"},{"code":"68319100036","name":"นางสาวศิริพร จอนโพกลาง"},{"code":"68319100037","name":"นายสรชา นาคะพงษ์"},{"code":"68319100039","name":"นางสาวสุภาวรรณ สิงห์ทอง"},{"code":"68319100040","name":"นางสาวอริสรา ยางงาม"},{"code":"68319100042","name":"นายปภาวิน ตันสุริวงศ์"},{"code":"68319100043","name":"นางสาวนริสรา ชาภักดี"}]}];
-var KEY='score-recorder-v2';
-var ALL={cur:0,classes:[]},S={cols:[],stu:[]};
-function seed(){ALL={cur:0,classes:DATA.map(function(c){return{subject:c.subject,name:c.name,group:c.group,cols:[],stu:c.students.map(function(s){return{id:uid(),code:s.code,name:s.name,sc:{}}})}})}}
-var GF='';
-var ROOMS={'683191001':'ส.ทธ.2/1','683191002':'ส.ทธ.2/2','683190101':'ส.ทส.2/1','683190102':'ส.ทส.2/2','693190101':'ส.ทส.1/1','693190102':'ส.ทส.1/2','693191002':'ส.ทธ.1/2','692191001':'ทธ.1'};
-function gl(g){return ROOMS[g]?ROOMS[g]+' ('+g+')':g}
-var NAMES={'21910-2018':'คอมพิวเตอร์และการบำรุงรักษา','30000-2002':'กิจกรรมองค์การวิชาชีพ 1','20000-2004':'กิจกรรมองค์การวิชาชีพ 1','31900-0002':'การเขียนโปรแกรมคอมพิวเตอร์','31900-1001':'กฎหมายในงานอาชีพอุตสาหกรรมดิจิทัลและเทคโนโลยีสารสนเทศ','31901-2001':'การออกแบบส่วนติดต่อผู้ใช้ขั้นสูง','31901-2005':'การพัฒนาซอฟต์แวร์ด้วยเทคโนโลยี Back-End','31901-2008':'การพัฒนาซอฟต์แวร์รูปแบบเดฟออฟส์ (DevOps)','31910-2004':'หลักการคิดเชิงออกแบบและนวัตกรรมธุรกิจดิจิทัล','31910-2018':'การผลิตสื่อมัลติมีเดียสำหรับธุรกิจดิจิทัล','31910-2026':'โปรแกรมกราฟิกสำหรับการออกแบบเว็บไซต์','31910-2029':'โครงงานด้านเทคโนโลยีธุรกิจดิจิทัล'};
-function fixNames(){ALL.classes.forEach(function(c){if(NAMES[c.subject])c.name=NAMES[c.subject]})}
-function mergeClasses(){['31901-2008','31901-2005'].forEach(function(code){
-  var L=ALL.classes.filter(function(c){return c.subject===code&&!c.groups});
-  var T=ALL.classes.filter(function(c){return c.subject===code&&c.groups})[0];
-  if(!T){if(L.length<2)return;T=L.shift();T.groups=[T.group];T.stu.forEach(function(s){s.grp=T.group})}
-  L.forEach(function(o){var map={};
-    o.cols.forEach(function(k){var f=T.cols.filter(function(x){return x.name===k.name&&x.max===k.max})[0];if(!f){f={id:k.id,name:k.name,max:k.max};T.cols.push(f)}map[k.id]=f.id});
-    o.stu.forEach(function(s){var sc={};for(var k in s.sc)if(map[k])sc[map[k]]=s.sc[k];s.sc=sc;s.grp=o.group;T.stu.push(s)});
-    T.groups.push(o.group);ALL.classes.splice(ALL.classes.indexOf(o),1)});
-  T.group=T.groups.join(' + ')});
-  ALL.cur=Math.max(0,Math.min(ALL.cur||0,ALL.classes.length-1))}
-function vis(){if(!S.groups)return S.stu;return [].concat.apply([],S.groups.filter(function(g){return !GF||g===GF}).map(function(g){return S.stu.filter(function(s){return s.grp===g})}))}
-function grpUI(){var m=!!S.groups;document.getElementById('gfl').style.display=m?'flex':'none';document.getElementById('sgl').style.display=m?'flex':'none';
-  if(m){if(GF&&S.groups.indexOf(GF)<0)GF='';
-    document.getElementById('gf').innerHTML='<option value="">ทั้งหมด ('+S.stu.length+' คน)</option>'+S.groups.map(function(g){return '<option value="'+g+'"'+(g===GF?' selected':'')+'>ห้อง '+gl(g)+' ('+S.stu.filter(function(s){return s.grp===g}).length+' คน)</option>'}).join('');
-    document.getElementById('sg').innerHTML=S.groups.map(function(g){return '<option value="'+g+'">'+gl(g)+'</option>'}).join('')}else GF=''}
-function load(){try{var r=localStorage.getItem(KEY);if(r)ALL=JSON.parse(r)}catch(e){}if(!ALL.classes||!ALL.classes.length)seed();mergeClasses();fixNames();S=ALL.classes[ALL.cur]||ALL.classes[0]}
-function save(){ALL.savedAt=Date.now();try{localStorage.setItem(KEY,JSON.stringify(ALL))}catch(e){}if(!NOSYNC)sched()}
-function fillSel(){document.getElementById('cls').innerHTML=ALL.classes.map(function(c,i){return '<option value="'+i+'"'+(i===ALL.cur?' selected':'')+'>'+esc(c.subject+' '+c.name+' · ห้อง '+(c.groups||[c.group]).map(gl).join(' + ')+' ('+c.stu.length+' คน)')+'</option>'}).join('')}
-function pick(i){GF='';ALL.cur=+i;S=ALL.classes[ALL.cur];save();render()}
-function uid(){return Math.random().toString(36).slice(2,9)}
-function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
-function gradeOf(p){return p>=80?4:p>=75?3.5:p>=70?3:p>=65?2.5:p>=60?2:p>=55?1.5:p>=50?1:0}
-function maxTotal(){return S.cols.reduce(function(a,c){return a+(+c.max||0)},0)}
-function totalOf(s){return S.cols.reduce(function(a,c){var v=parseFloat(s.sc[c.id]);return a+(isNaN(v)?0:v)},0)}
-function calc(s){var m=maxTotal(),t=totalOf(s),p=m?t/m*100:0;return{t:t,p:p,g:gradeOf(p)}}
-function addStu(){var c=document.getElementById('sc'),n=document.getElementById('sn');
-  if(!n.value.trim()){n.focus();return}
-  S.stu.push({id:uid(),code:c.value.trim(),name:n.value.trim(),sc:{},grp:S.groups?document.getElementById('sg').value:S.group});c.value='';n.value='';c.focus();save();render()}
-function addCol(){var n=document.getElementById('cn'),m=document.getElementById('cm');
-  if(!n.value.trim()||!(+m.value>0)){n.focus();return}
-  S.cols.push({id:uid(),name:n.value.trim(),max:+m.value});n.value='';save();render()}
-function delStu(id){if(confirm('ลบนักศึกษาคนนี้?')){S.stu=S.stu.filter(function(s){return s.id!==id});save();render()}}
-function delCol(id){if(confirm('ลบรายการคะแนนนี้?')){S.cols=S.cols.filter(function(c){return c.id!==id});save();render()}}
-function setScore(sid,cid,el){var s=S.stu.find(function(x){return x.id===sid}),c=S.cols.find(function(x){return x.id===cid});
-  var v=el.value;if(v===''){delete s.sc[cid]}else{var n=parseFloat(v);if(isNaN(n)||n<0)n=0;if(n>c.max)n=c.max;s.sc[cid]=n;el.value=n}
-  save();updRow(s);stats()}
-function setName(sid,k,el){var s=S.stu.find(function(x){return x.id===sid});s[k]=el.value;save()}
-function updRow(s){var r=calc(s),tr=document.getElementById('r'+s.id);if(!tr)return;
-  tr.querySelector('.t').textContent=r.t;tr.querySelector('.p').textContent=r.p.toFixed(1);
-  var g=tr.querySelector('.g');g.textContent=r.g;g.className='g '+(r.g>=1?'pass':'fail')}
-function copyCols(){if(!S.cols.length){alert('ห้องนี้ยังไม่มีรายการคะแนน');return}
-  if(!confirm('คัดลอกรายการคะแนนของห้องนี้ไปยังห้องอื่นทั้งหมด? (รายการที่ชื่อและคะแนนเต็มซ้ำกันจะไม่ถูกเพิ่ม คะแนนเดิมไม่หาย)'))return;
-  ALL.classes.forEach(function(c){if(c===S)return;S.cols.forEach(function(k){if(!c.cols.some(function(x){return x.name===k.name&&x.max===k.max}))c.cols.push({id:uid(),name:k.name,max:k.max})})});
-  save();render();alert('คัดลอกเรียบร้อย')}
-function buildSum(){var h='<table><thead><tr><th class="l">วิชา</th><th>ห้อง (กลุ่มเรียน)</th><th>นศ.</th><th>รายการ</th><th>กรอกแล้ว</th><th>ยืนยันแล้ว</th><th>เฉลี่ย %</th><th>เกรดเฉลี่ย</th><th>ผ่าน</th><th>ไม่ผ่าน</th></tr></thead><tbody>';
-  ALL.classes.forEach(function(c,i){var m=c.cols.reduce(function(a,k){return a+(+k.max||0)},0);
-    (c.groups||[c.group]).forEach(function(g){var L=c.groups?c.stu.filter(function(s){return s.grp===g}):c.stu,n=L.length,ent=0,sp=0,sg=0,pass=0;
-      L.forEach(function(s){var t=0,any=false;c.cols.forEach(function(k){var v=parseFloat(s.sc[k.id]);if(!isNaN(v)){t+=v;any=true}});
-        if(any){var p=m?t/m*100:0,gr=gradeOf(p);ent++;sp+=p;sg+=gr;if(gr>=1)pass++}});
-      h+='<tr><td class="l"><a href="#" onclick="pick('+i+');return false" style="color:var(--pr)">'+esc(c.subject+' '+c.name)+'</a>'+(c.groups?' <small>🔗 สอนรวม</small>':'')+'</td><td>'+gl(g)+'</td><td>'+n+'</td><td>'+c.cols.length+'</td><td>'+ent+'/'+n+'</td><td>'+L.filter(function(s){return s.ok}).length+'/'+n+'</td><td>'+(ent?(sp/ent).toFixed(1):'-')+'</td><td>'+(ent?(sg/ent).toFixed(2):'-')+'</td><td class="pass">'+(ent?pass:'-')+'</td><td class="fail">'+(ent?ent-pass:'-')+'</td></tr>'})});
-  document.getElementById('sum').innerHTML=h+'</tbody></table>'}
-function tasks(){var el=document.getElementById('tasks');
-  if(!S.cols.length){el.innerHTML='<div class="empty">ยังไม่มีรายการคะแนน เพิ่มได้ที่ช่อง "ชื่อรายการคะแนน" ด้านบน</div>';return}
-  var h='<table style="min-width:420px"><thead><tr><th>#</th><th class="l">ชื่องาน / รายการ</th><th>คะแนนเต็ม</th><th></th></tr></thead><tbody>';
-  S.cols.forEach(function(c,i){h+='<tr><td>'+(i+1)+'</td><td class="l"><input class="nm" value="'+esc(c.name)+'" onchange="renCol(\''+c.id+'\',this.value)"></td><td><input class="sc" type="number" min="1" value="'+c.max+'" onchange="maxCol(\''+c.id+'\',this.value)"></td><td><button class="x" onclick="delCol(\''+c.id+'\')">✕</button></td></tr>'});
-  el.innerHTML=h+'<tr><td></td><td class="l"><b>รวมคะแนนเต็ม</b></td><td><b>'+maxTotal()+'</b></td><td></td></tr></tbody></table>'}
-function renCol(id,v){var c=S.cols.find(function(x){return x.id===id});if(c&&v.trim())c.name=v.trim();save();render()}
-function maxCol(id,v){var n=parseFloat(v),c=S.cols.find(function(x){return x.id===id});if(c&&n>0){c.max=n;S.stu.forEach(function(s){if(s.sc[id]>n)s.sc[id]=n})}save();render()}
-function okStu(id){var s=S.stu.find(function(x){return x.id===id});if(!S.cols.some(function(c){return s.sc[c.id]!==undefined})){alert('ยังไม่ได้กรอกคะแนนของ '+s.name);return}s.ok=true;s.at=new Date().toLocaleString('th-TH');save();render()}
-function editStu(id){var s=S.stu.find(function(x){return x.id===id});s.ok=false;delete s.at;save();render()}
-function okAll(){var L=vis().filter(function(s){return !s.ok&&S.cols.some(function(c){return s.sc[c.id]!==undefined})});
-  if(!L.length){alert('ไม่มีรายการที่รอบันทึก');return}
-  if(!confirm('บันทึกยืนยันคะแนน '+L.length+' คนที่กรอกแล้ว?'))return;
-  var t=new Date().toLocaleString('th-TH');L.forEach(function(s){s.ok=true;s.at=t});save();render()}
-var CK='score-recorder-cfg',NOSYNC=false,TM=null;
-var GAS=`var TOKEN = 'ตั้งรหัสลับของคุณ';
-function doGet(e) {
-  if (e.parameter.token !== TOKEN) return out({error: 'unauthorized'});
-  var vals = sheet('data').getDataRange().getValues();
-  var txt = vals.map(function (r) { return String(r[0]).slice(1); }).join('');
-  return out({ok: true, state: txt ? JSON.parse(txt) : null});
+// ====== ตั้งค่า (แก้ 2 บรรทัดนี้) ======
+const SUPABASE_URL='https://wlvhiyrsvaxfzkpitjct.supabase.co';
+const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndsdmhpeXJzdmF4ZnprcGl0amN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA1ODk4ODUsImV4cCI6MjA4NjE2NTg4NX0.BsE7vZHveqos1wt-ADPrzmUW0PzdY9cfVrvu8ahW4xI';
+// =====================================
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+const $=s=>document.querySelector(s),e=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const n2=x=>Math.round(x*100)/100;
+const grade=p=>p>=80?4:p>=75?3.5:p>=70?3:p>=65?2.5:p>=60?2:p>=55?1.5:p>=50?1:0;
+const ROOMS={683191001:'ส.ทธ.2/1',683191002:'ส.ทธ.2/2',683190101:'ส.ทส.2/1',683190102:'ส.ทส.2/2',693190101:'ส.ทส.1/1',693190102:'ส.ทส.1/2',693191002:'ส.ทธ.1/2',692191001:'ทธ.1',682190101:''};
+// นักศึกษา: รหัส 11 หลัก = 8 หลักแรกของรหัสกลุ่ม + เลข 3 หลักหน้าชื่อ
+const D={
+683190101:'002 นายกฤตัชญ สีสันต|003 นางสาวกันติมา ดีมีชาติ|004 นายกิตติกร ละเอียด|005 นางสาวชนินาถ ใจดี|006 นายนันทวัฒน กุลจันทร|008 นางสาวพิมพชนก เข็มนางรอง|009 นายพีรภัทร พยุงกลาง|010 นางสาววาสนา อุยเอก|011 นายสิทธิพันธ พานทอง|012 นางสาวสุพิชชา โนราช',
+683190102:'014 นางสาวกมลพิชญ คงทิพย|015 นายถิรวัฒน อโนศรี|016 นายนภาพล ทิพยจันทร|017 นายนิติภูมิ พิมเสน|018 นายภากร เนาวิรัตน|019 นายสรวิศ มั่นยืน|020 นายสหัสสะเดชะ เอี่ยมสำอางค|021 นายสุทธิพงษ เรืองแสงทองกุล|022 นางสาวอภิญญา ขำวงค|023 นายปุณณสิน ภาคเพียร|024 นายจักรพันธ ค่ำคูณ',
+693190101:'001 นางสาวชญานิษฐ กาสีพวง|002 นายตรีเทพ ปะกิริโย|003 นายทิวากร พุทธิชาติ|005 นายเธียร พงศสุปาณี|006 นางสาวเบญจรัตน โตพังเทียม|007 นางสาวพานิก นุชผักแวน|008 นายภัทรพล ทีฆะสุข|009 นางสาวศาสนตรส คุนเคย|010 นายศิริบุตร เซ็นปกธงชัย|011 นายสุภวัชร สุวรรณหงษ|023 นายภาณุวัฒน รัตนศรี|024 นางสาวกนกวรรณ เงินสยาม|025 นายพีรภัทร เอี่ยมสุรา|026 นายธีรพงษ คำเอี่ยมดี',
+693190102:'012 นางสาวธนัชชา ตันกระโทก|013 นางสาวพรทิพย แก้วเกตุ|014 นางสาวมินตรา สมพงค|015 นายสราวุธ บุญเกิด|016 นางสาวสิริภร เทพนรินทร|017 นายสุขเกษม นิยมรัตน|018 นางสาวสุชาวดี อ่อนเขนย|019 นางสาวสุดารัตน บุญโถ|022 นางสาวไอริษา เมฆปะคำ',
+683191002:'023 นางสาวกฤษณพร แสนเดช|025 นางสาวจารุมน พรมมาสม|026 นางสาวชลธิชา เส็งแขงขัน|027 นางสาวชลธิชา แสนกล้า|028 นางสาวชลิตา คล้ายตะคุ|029 นางสาวโยษิตา จำนงเพียร|030 นายธนภัทร ขาวก้านเหลือง|031 นายธนากร ธีรภัทรวรากร|034 นางสาววรางคณา สักเหล่า|036 นางสาวศิริพร จอนโพกลาง|037 นายสรชา นาคะพงษ|039 นางสาวสุภาวรรณ สิงหทอง|040 นางสาวอริสรา ยางงาม|042 นายปภาวิน ตันสุริวงศ|043 นางสาวนริสรา ชาภักดี',
+683191001:'001 นางสาวกมลลักษณ กลิ่นบุหงา|002 นางสาวจีรพรรณ บุตรพรม|003 นางสาวชนมนิภา โถทอง|004 นางสาวชลธิชา เข็มบุบผา|005 นางสาวฐิตาสิริ ประจง|006 นางสาวณัฐกานต หลอดทอง|007 นายณัฐพงศ โสกูล|008 นายณัฐภัทร ดีสวาสดิ์|009 นายธนภัทร แสนเดช|010 นางสาวธัญญารัตน ลอดจันทรพะเนา|011 นายธนพิพัฒน อินทรบุญ|012 นางสาวนรัทยา ดีสวัสดิ์|013 นายนันทวัฒชัย สิริประโคน|014 นางสาวปาริชาติ ผดากาญ|015 นางสาวฟ้าใส เปี่ยมเงิน|016 นางสาวฟ้าใส สันกระโทก|017 นายมินทรธดา เกษรนวล|019 นายวรพล แช่มรัมย์|020 นางสาวสุภัชชา กันทาสี|021 นายอานนท ทองทรัพย|035 นายวีรชัย คำตา',
+693191002:'021 นายกิตติ นาชม|022 นางสาวกิตติกา ศิริเวช|023 นางสาวจุฑาภรณ ปานชาติ|027 นางสาวธัญนันท เพ็ชรกลั่นพะเนา|028 นางสาวนวรัตน รามัญ|030 นายปฏิการ ภูทอง|031 นางสาวปาริตา คนหลัก|032 นางสาวผกายศรี สิงหเย็น|033 นางสาวพัฒนนรี เพียบประโคน|035 นางสาวเพียงขวัญ โสกูล|036 นางสาวภัทรภรณ พรมประสาทสร|037 นายภีรภัทร สุริยะประสิทธิ์|038 นายยศวรรธน เรืองนาม|041 นางสาวศิริประภาภรณ ประทุม|042 นายศุกลวัฒน ทิมาตะฤกะ|044 นางสาววรินทร เวียงสมุทร|048 นางสาวนิชาดา ยันทะแยม',
+682190101:'001 นางสาวจิดาภา อ่อนนางรอง|002 นายจิรวุฒิ บุตรดี|003 นางสาวจีรนันท รวมกูล|004 นางสาวชญานิษฐ ชูบัวทอง|005 นางสาวชญานุช บัวชุม|006 นายณพณัฐ ชำนิพันธ|007 นางสาวณัฐฐาพร วงเวียน|008 นายทักษกร มณีเนตร|009 นายธนพัฒน พิทักษี|010 นายธิติวุฒิ กองศักดิ์|011 นางสาวนภัสวรรณ ช่างน้อย|013 นางสาวประภัสรา ทวีพูน|014 นายปุณพจน ศรีบุญมา|018 นางสาวรัตติกาล ทองโพธิ์|020 นายวุฒิพงศ มาลาล้ำ|021 นายสิทธินนท โพยประโคน|022 นายสุทธิพงศ จารุตันติ์|023 นางสาวอมราพร พลเดช|024 นางสาวอรอนงค ครุภัณฑ|026 นายไอยเรศ เหลือถนอม',
+692191001:'002 นางสาวชมพูนุช ปรีชาพูด|003 นางสาวชุติมา พาลี|005 นางสาวณัฐญาภรณ จัตุกุล|007 นางสาวปณฑิตา คะพันธ|009 นายปณณวิชญ คะพันธ|011 นางสาวภัทรชนก ยิ้มแย้ม|012 นายภัทรพงค สงกูล|014 นางสาวเมธิรา เณรกูล|015 นางสาวลัดดาวรรณ แก้วปรือ|016 นางสาววรดา แสนเดช|017 นางสาววรรณนิษา ศิริงาม|018 นายวรินทร นามทอง|020 นางสาวอภิญญา สุริยะประสิทธิ์|021 นางสาวอรกาญจน ระบือนาม|022 นางสาวสุจินันท กิรัมย์'};
+const L='กฎหมายในงานอาชีพอุตสาหกรรมดิจิทัลและเทคโนโลยีสารสนเทศ';
+const O=[['20000-2004','กิจกรรมองค์การวิชาชีพ 1',[682190101]],['21910-2018','คอมพิวเตอร์และการบำรุงรักษา',[692191001]],['30000-2002','กิจกรรมองค์การวิชาชีพ 1',[693191002]],['31900-0002','การเขียนโปรแกรมคอมพิวเตอร์',[693190102]],['31900-1001',L,[683190102]],['31900-1001',L,[693190101]],['31901-2001','การออกแบบส่วนติดต่อผู้ใช้ขั้นสูง',[693190102]],['31901-2005','การพัฒนาซอฟต์แวร์ด้วยเทคโนโลยี Back-End',[683190101,693190102]],['31901-2008','การพัฒนาซอฟต์แวร์รูปแบบเดฟออปส์ (DevOps)',[683190101,683190102]],['31910-2004','หลักการคิดเชิงออกแบบและนวัตกรรมธุรกิจดิจิทัล',[683191002]],['31910-2018','การผลิตสื่อมัลติมีเดียสำหรับธุรกิจดิจิทัล',[683191001]],['31910-2026','โปรแกรมกราฟิกสำหรับการออกแบบเว็บไซต์',[683191002]],['31910-2029','โครงงานด้านเทคโนโลยีธุรกิจดิจิทัล',[683191002]]];
+
+let DB={groups:[],offerings:[],og:[],students:[],tasks:[],scores:{},conf:{}},view='sum',curO=null,flt='all',user=null;
+let Q=JSON.parse(localStorage.getItem('q')||'[]'),timer,lastSync='';
+const setSync=(t,bad)=>{$('#sync').innerHTML=bad?`<span style="background:#fff;color:#b91c1c;padding:2px 8px;border-radius:6px">${e(t)}</span> <a href="#" id="retry" style="color:#fff">ลองใหม่</a>`:e(t);const r=$('#retry');if(r)r.onclick=ev=>{ev.preventDefault();flush()}};
+const errMsg=x=>{const m=(x&&x.message)||String(x);if(/JWT|expired|session/i.test(m))return'หมดเวลาเข้าสู่ระบบ กรุณาล็อกอินใหม่';if(/row-level|permission/i.test(m))return'ไม่มีสิทธิ์เข้าถึงข้อมูล';if(/fetch|network/i.test(m))return'เครือข่ายมีปัญหา';return'ผิดพลาด: '+m};
+const saveQ=()=>localStorage.setItem('q',JSON.stringify(Q));
+function enq(op){Q=Q.filter(x=>x.k!==op.k);Q.push(op);saveQ();setSync('⏳ กำลังบันทึก');clearTimeout(timer);timer=setTimeout(flush,1500)}
+async function flush(){
+  if(!Q.length)return;
+  if(!navigator.onLine){setSync('✗ ออฟไลน์ (รอส่งเมื่อมีเน็ต)',1);return}
+  const b=Q.slice(),sc=b.filter(x=>x.t=='s').map(x=>x.r),cf=b.filter(x=>x.t=='c').map(x=>x.r);
+  try{
+    if(sc.length){const{error}=await sb.from('scores').upsert(sc,{onConflict:'task_id,student_id'});if(error)throw error}
+    if(cf.length){const{error}=await sb.from('confirmations').upsert(cf,{onConflict:'offering_id,student_id'});if(error)throw error}
+    Q=Q.filter(x=>!b.includes(x));saveQ();
+    lastSync=new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});setSync('☁️ บันทึกแล้ว '+lastSync);
+  }catch(x){setSync('✗ '+errMsg(x),1)}
 }
-function doPost(e) {
-  var d = JSON.parse(e.postData.contents);
-  if (d.token !== TOKEN) return out({error: 'unauthorized'});
-  var lock = LockService.getScriptLock(); lock.waitLock(20000);
-  var json = JSON.stringify(d.state), chunks = [];
-  for (var i = 0; i < json.length; i += 40000) chunks.push(['J' + json.slice(i, i + 40000)]);
-  var sh = sheet('data'); sh.clear();
-  sh.getRange(1, 1, chunks.length, 1).setValues(chunks);
-  var rs = sheet('คะแนน'); rs.clear();
-  if (d.rows && d.rows.length) rs.getRange(1, 1, d.rows.length, d.rows[0].length).setValues(d.rows);
-  lock.releaseLock();
-  return out({ok: true});
+window.addEventListener('online',flush);
+
+async function all(t){let r=[],i=0;for(;;){const{data,error}=await sb.from(t).select('*').range(i,i+999);if(error)throw error;r=r.concat(data);if(data.length<1000)return r;i+=1000}}
+async function load(){
+  try{
+    const[g,o,og,s,t,sc,cf]=await Promise.all(['groups','offerings','offering_groups','students','tasks','scores','confirmations'].map(all));
+    DB={groups:g,offerings:o,og,students:s,tasks:t.sort((a,b)=>a.sort_order-b.sort_order),scores:{},conf:{}};
+    sc.forEach(r=>DB.scores[r.task_id+'|'+r.student_id]=r.score);
+    cf.forEach(r=>DB.conf[r.offering_id+'|'+r.student_id]=r);
+    try{localStorage.setItem('cache',JSON.stringify(DB))}catch(_){}
+  }catch(x){
+    const c=localStorage.getItem('cache');if(c){DB=JSON.parse(c);setSync('✗ ใช้ข้อมูลสำรองในเครื่อง: '+errMsg(x),1)}else throw x}
+  Q.forEach(q=>{if(q.t=='s')DB.scores[q.r.task_id+'|'+q.r.student_id]=q.r.score;else DB.conf[q.r.offering_id+'|'+q.r.student_id]=q.r});
+  if(Q.length)flush();
 }
-function sheet(n) { var ss = SpreadsheetApp.getActiveSpreadsheet(); return ss.getSheetByName(n) || ss.insertSheet(n); }
-function out(o) { return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }`;
-function cfg(){try{return JSON.parse(localStorage.getItem(CK))||{}}catch(e){return{}}}
-function setSt(t,k){var e=document.getElementById('dbst');if(e){e.textContent=t;e.style.color=k==='bad'?'var(--bad)':k==='ok'?'var(--ok)':'var(--mu)'}}
-function hm(){return new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})}
-function sched(){var c=cfg();if(!c.url||c.auto===false)return;clearTimeout(TM);setSt('⏳ รอซิงก์...');TM=setTimeout(push,1500)}
-function dbRows(){var r=[['วิชา','ชื่อวิชา','ห้อง','กลุ่มเรียน','รหัสนักศึกษา','ชื่อ-สกุล','รายการคะแนน','คะแนนเต็ม','คะแนน','สถานะ','บันทึกเมื่อ']];
-  ALL.classes.forEach(function(c){c.stu.forEach(function(s){var g=s.grp||c.group;c.cols.forEach(function(k){var v=s.sc[k.id];r.push([c.subject,c.name,ROOMS[g]||'',g,s.code,s.name,k.name,k.max,v===undefined?'':v,s.ok?'บันทึกแล้ว':'ยังไม่บันทึก',s.at||''])})})});return r}
-async function push(){var c=cfg();if(!c.url){alert('ตั้งค่าฐานข้อมูลก่อน');return}clearTimeout(TM);setSt('⏳ กำลังบันทึกขึ้นฐานข้อมูล...');
-  try{var r=await fetch(c.url,{method:'POST',body:JSON.stringify({token:c.token||'',state:ALL,rows:dbRows()})});var j=await r.json();
-    if(j.ok)setSt('☁️ บันทึกขึ้นฐานข้อมูลแล้ว '+hm(),'ok');else setSt('✗ '+(j.error==='unauthorized'?'รหัสลับไม่ถูกต้อง':(j.error||'ผิดพลาด')),'bad')}
-  catch(e){setSt('✗ เชื่อมต่อฐานข้อมูลไม่ได้ (ข้อมูลยังบันทึกในเครื่องอยู่)','bad')}}
-async function pull(manual){var c=cfg();if(!c.url){if(manual)alert('ใส่ Web App URL ก่อน');return}
-  setSt('⏳ กำลังตรวจสอบฐานข้อมูล...');
-  try{var r=await fetch(c.url+(c.url.indexOf('?')<0?'?':'&')+'token='+encodeURIComponent(c.token||''));var j=await r.json();
-    if(j.error){setSt('✗ '+(j.error==='unauthorized'?'รหัสลับไม่ถูกต้อง':j.error),'bad');return}
-    var st=j.state;
-    if(!st||!st.classes){push();return}
-    var doLoad=manual?confirm('แทนที่ข้อมูลในเครื่องด้วยข้อมูลจากฐานข้อมูล?'):(st.savedAt||0)>(ALL.savedAt||0);
-    if(doLoad){NOSYNC=true;ALL=st;mergeClasses();fixNames();S=ALL.classes[ALL.cur]||ALL.classes[0];save();NOSYNC=false;render();setSt('⬇ โหลดข้อมูลล่าสุดจากฐานข้อมูลแล้ว '+hm(),'ok')}
-    else if(!manual){if((ALL.savedAt||0)>(st.savedAt||0))push();else setSt('☁️ ข้อมูลตรงกับฐานข้อมูลแล้ว '+hm(),'ok')}
-    else setSt('ยกเลิกการโหลด')}
-  catch(e){setSt('✗ เชื่อมต่อฐานข้อมูลไม่ได้','bad')}}
-function dbSave(){var c={url:document.getElementById('dburl').value.trim(),token:document.getElementById('dbtok').value,auto:document.getElementById('dbauto').checked};
-  try{localStorage.setItem(CK,JSON.stringify(c))}catch(e){}
-  if(!c.url){setSt('ล้างการตั้งค่าแล้ว');return}pull(false)}
-function copyGAS(){try{navigator.clipboard.writeText(GAS).then(function(){alert('คัดลอกโค้ดแล้ว')},function(){alert('คัดลอกไม่สำเร็จ ให้เลือกโค้ดในกรอบแล้วคัดลอกเอง')})}catch(e){alert('คัดลอกไม่สำเร็จ ให้เลือกโค้ดในกรอบแล้วคัดลอกเอง')}}
-function dbInit(){var c=cfg();document.getElementById('dburl').value=c.url||'';document.getElementById('dbtok').value=c.token||'';document.getElementById('dbauto').checked=c.auto!==false;document.getElementById('gas').textContent=GAS;if(c.url)pull(false)}
-function toggleSum(){var e=document.getElementById('sumcard');e.hidden=!e.hidden;if(!e.hidden)buildSum()}
-function sumRefresh(){var e=document.getElementById('sumcard');if(e&&!e.hidden)buildSum()}
-function stats(){sumRefresh();var L=vis(),n=L.length,rs=L.map(calc),avg=n?rs.reduce(function(a,r){return a+r.p},0)/n:0,
-  pass=rs.filter(function(r){return r.g>=1}).length,hi=n?Math.max.apply(null,rs.map(function(r){return r.t})):0,lo=n?Math.min.apply(null,rs.map(function(r){return r.t})):0;
-  var gpa=n?rs.reduce(function(a,r){return a+r.g},0)/n:0;
-  document.getElementById('stats').innerHTML=[['จำนวนนักศึกษา',n],['ยืนยันคะแนนแล้ว',L.filter(function(s){return s.ok}).length+' / '+n],['คะแนนเต็มรวม',maxTotal()],['ค่าเฉลี่ย (%)',avg.toFixed(1)],['เกรดเฉลี่ยห้อง',gpa.toFixed(2)],['ผ่าน / ไม่ผ่าน',pass+' / '+(n-pass)],['สูงสุด / ต่ำสุด',hi+' / '+lo]]
-  .map(function(a){return '<div class="st"><b>'+a[1]+'</b><span>'+a[0]+'</span></div>'}).join('')}
+const rooms=o=>DB.og.filter(x=>x.offering_id==o.id).map(x=>x.group_code).sort();
+const gname=c=>{const g=DB.groups.find(x=>x.code==c);return(g&&g.room_name)||c};
+const studs=c=>DB.students.filter(s=>s.group_code==c).sort((a,b)=>a.student_code.localeCompare(b.student_code));
+const tasksOf=o=>DB.tasks.filter(t=>t.offering_id==o.id);
+function calc(o,s){const ts=tasksOf(o);let tot=0,any=false;ts.forEach(t=>{const v=DB.scores[t.id+'|'+s.id];if(v!=null&&v!==''){tot+=+v;any=true}});const mx=ts.reduce((a,t)=>a+ +t.max_score,0),pct=mx?tot/mx*100:0;return{tot,any,mx,pct,gr:grade(pct)}}
+const isConf=(o,s)=>(DB.conf[o.id+'|'+s.id]||{}).confirmed;
+
+// ===== เข้าสู่ระบบ =====
+function loginView(msg){
+  $('#out').hidden=true;$('#who').textContent='';
+  $('#app').innerHTML=`<div class="card login"><h2 style="margin:0">เข้าสู่ระบบ</h2><input id="em" type="email" placeholder="อีเมลครู" autocomplete="username"><input id="pw" type="password" placeholder="รหัสผ่าน" autocomplete="current-password"><button id="go">เข้าสู่ระบบ</button><div class="err" id="lm">${e(msg||'')}</div></div>`;
+  const go=async()=>{$('#lm').textContent='กำลังตรวจสอบ...';const{error}=await sb.auth.signInWithPassword({email:$('#em').value.trim(),password:$('#pw').value});if(error)$('#lm').textContent=/Invalid/i.test(error.message)?'อีเมลหรือรหัสผ่านไม่ถูกต้อง':errMsg(error)};
+  $('#go').onclick=go;$('#pw').onkeydown=ev=>{if(ev.key=='Enter')go()};
+}
+$('#out').onclick=async()=>{await sb.auth.signOut()};
+sb.auth.onAuthStateChange((ev,ses)=>{
+  if(ses){user=ses.user;if(ev=='SIGNED_IN'||ev=='INITIAL_SESSION')start()}else{user=null;loginView()}});
+async function start(){
+  $('#out').hidden=false;$('#who').textContent=user.email;$('#app').innerHTML='<p>กำลังโหลดข้อมูล...</p>';
+  try{await load();render()}catch(x){$('#app').innerHTML=`<div class="card err">${e(errMsg(x))}<br>หากยังไม่ได้รัน schema.sql ให้รันใน Supabase SQL Editor ก่อน</div>`}
+}
+
+// ===== หน้าหลัก =====
 function render(){
-  fillSel();tasks();grpUI();
-  var el=document.getElementById('tbl');
-  if(!S.stu.length&&!S.cols.length){el.innerHTML='<div class="empty">เริ่มต้นโดยเพิ่มรายการคะแนน (เช่น สอบกลางภาค) และรายชื่อนักศึกษาด้านบน</div>';stats();return}
-  var h='<table><thead><tr><th>#</th><th class="l">รหัส</th><th class="l">ชื่อ-สกุล</th>';
-  S.cols.forEach(function(c){h+='<th class="vh" title="'+esc(c.name)+' (เต็ม '+c.max+')"><div class="v">'+esc(c.name)+'</div><small>เต็ม '+c.max+'</small></th>'});
-  h+='<th>รวม</th><th>%</th><th>เกรด</th><th>สถานะ / จัดการ</th></tr></thead><tbody>';
-  var lg='',gi=0;vis().forEach(function(s,i){var r=calc(s);
-    if(S.groups){if(s.grp!==lg){lg=s.grp;gi=0;h+='<tr><td colspan="'+(S.cols.length+7)+'" class="gh">ห้อง '+gl(lg)+' · '+S.stu.filter(function(x){return x.grp===lg}).length+' คน</td></tr>'}gi++;i=gi-1}
-    h+='<tr id="r'+s.id+'"'+(s.ok?' class="lock"':'')+'><td>'+(i+1)+'</td><td class="l"><input'+(s.ok?' disabled':'')+' value="'+esc(s.code)+'" style="width:100px" onchange="setName(\''+s.id+'\',\'code\',this)"></td>'
-    +'<td class="l"><input class="nm"'+(s.ok?' disabled':'')+' value="'+esc(s.name)+'" onchange="setName(\''+s.id+'\',\'name\',this)"></td>';
-    S.cols.forEach(function(c){var v=s.sc[c.id];h+='<td><input class="sc" type="number" min="0" max="'+c.max+'" step="any"'+(s.ok?' disabled':'')+' value="'+(v===undefined?'':v)+'" onchange="setScore(\''+s.id+'\',\''+c.id+'\',this)"></td>'});
-    h+='<td class="t"><b>'+r.t+'</b></td><td class="p">'+r.p.toFixed(1)+'</td><td class="g '+(r.g>=1?'pass':'fail')+'">'+r.g+'</td><td style="white-space:nowrap">'+(s.ok?'<span class="pass" title="'+esc(s.at||'')+'">✓ บันทึกแล้ว</span> <button onclick="editStu(\''+s.id+'\')">✏️ แก้ไข</button>':'<button class="p" onclick="okStu(\''+s.id+'\')">💾 บันทึก</button>')+' <button class="x" onclick="delStu(\''+s.id+'\')">🗑</button></td></tr>'});
-  if(!S.stu.length)h+='<tr><td colspan="'+(S.cols.length+7)+'" class="empty">ยังไม่มีรายชื่อนักศึกษา</td></tr>';
-  el.innerHTML=h+'</tbody></table>';stats()}
-function dl(name,text,type){var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:type}));a.download=name;a.click()}
-function exportCSV(){var rows=[['ลำดับ','รหัส','ชื่อ-สกุล','ห้อง (กลุ่มเรียน)'].concat(S.cols.map(function(c){return c.name+' ('+c.max+')'}),['รวม','ร้อยละ','เกรด','สถานะ'])];
-  var sv=S.groups?[].concat.apply([],S.groups.map(function(g){return S.stu.filter(function(s){return s.grp===g})})):S.stu;sv.forEach(function(s,i){var r=calc(s);rows.push([i+1,s.code,s.name,gl(s.grp||S.group)].concat(S.cols.map(function(c){return s.sc[c.id]===undefined?'':s.sc[c.id]}),[r.t,r.p.toFixed(1),r.g,s.ok?'บันทึกแล้ว':'ยังไม่บันทึก']))});
-  var csv='\ufeff'+rows.map(function(r){return r.map(function(v){return '"'+String(v).replace(/"/g,'""')+'"'}).join(',')}).join('\r\n');
-  dl(S.subject+'_'+(S.groups?S.groups.join('_'):S.group)+'.csv',csv,'text/csv')}
-function exportJSON(){dl('score-backup.json',JSON.stringify(ALL),'application/json')}
-document.getElementById('imp').onchange=function(e){var f=e.target.files[0];if(!f)return;var r=new FileReader();
-  r.onload=function(){try{var d=JSON.parse(r.result);if(d.classes&&d.classes.length){ALL=d;mergeClasses();fixNames();S=ALL.classes[ALL.cur]||ALL.classes[0];save();render()}else alert('ไฟล์ไม่ถูกต้อง')}catch(x){alert('ไฟล์ไม่ถูกต้อง')}};r.readAsText(f);e.target.value=''};
-function resetAll(){if(confirm('ล้างคะแนนและรายการคะแนนทุกวิชา แล้วโหลดรายชื่อตั้งต้นใหม่? ย้อนกลับไม่ได้')){seed();mergeClasses();fixNames();S=ALL.classes[0];save();render()}}
-document.getElementById('sn').onkeydown=function(e){if(e.key==='Enter')addStu()};
-document.getElementById('cn').onkeydown=function(e){if(e.key==='Enter')addCol()};
-load();render();dbInit();
-</script>
-</body>
-</html>
+  const opts=DB.offerings.slice().sort((a,b)=>a.subject_code.localeCompare(b.subject_code)||rooms(a).join().localeCompare(rooms(b).join()));
+  const lab=o=>`${o.subject_code} ${o.subject_name} · ห้อง ${rooms(o).map(c=>`${gname(c)} (${c})`).join(' + ')} (${rooms(o).reduce((a,c)=>a+studs(c).length,0)} คน)`;
+  if(view=='off'&&!DB.offerings.find(o=>o.id==curO))view='sum';
+  let h=`<div class="card noprint"><div class="row"><select id="sel" style="flex:1;min-width:220px"><option value="sum">📊 สรุปรวมทุกวิชา</option><option value="stu">👥 จัดการนักศึกษา</option>${opts.map(o=>`<option value="${o.id}">${e(lab(o))}</option>`).join('')}</select><button class="s" id="rf">🔄 รีเฟรชข้อมูล</button><button class="s" id="bk">สำรอง JSON</button></div></div>`;
+  if(!DB.offerings.length)h+=`<div class="card"><p>ยังไม่มีข้อมูล กดเพื่อสร้างกลุ่มเรียน วิชา และรายชื่อนักศึกษาตั้งต้น</p><button id="seed">นำเข้ารายชื่อตั้งต้น</button></div>`;
+  h+='<div id="body"></div>';$('#app').innerHTML=h;
+  $('#sel').value=view=='off'?curO:view;
+  $('#sel').onchange=ev=>{const v=ev.target.value;if(v=='sum'||v=='stu')view=v;else{view='off';curO=v;flt='all'}render()};
+  $('#rf').onclick=async()=>{setSync('⏳ กำลังโหลด');try{await load();setSync('☁️ โหลดแล้ว');render()}catch(x){setSync('✗ '+errMsg(x),1)}};
+  $('#bk').onclick=()=>dl('backup.json',JSON.stringify(DB),'application/json');
+  const sd=$('#seed');if(sd)sd.onclick=seed;
+  if(view=='sum')sumView();else if(view=='stu')stuView();else offView();
+}
+function dl(name,txt,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type}));a.download=name;a.click()}
+async function seed(){
+  $('#seed').disabled=true;$('#seed').textContent='กำลังนำเข้า...';
+  try{
+    let r=await sb.from('groups').upsert(Object.entries(ROOMS).map(([code,room_name])=>({code,room_name:room_name||null})),{onConflict:'owner_id,code'});if(r.error)throw r.error;
+    const st=[];for(const g in D)D[g].split('|').forEach(l=>{const i=l.indexOf(' ');st.push({student_code:g.slice(0,8)+l.slice(0,i),full_name:l.slice(i+1),group_code:g})});
+    r=await sb.from('students').upsert(st,{onConflict:'owner_id,student_code'});if(r.error)throw r.error;
+    r=await sb.from('offerings').insert(O.map(o=>({subject_code:o[0],subject_name:o[1]}))).select();if(r.error)throw r.error;
+    const ids=r.data.sort((a,b)=>a.created_at<b.created_at?-1:1);
+    const map={};ids.forEach((x,i)=>map[i]=x.id);
+    // เรียงตามลำดับ insert ไม่รับประกัน จึงจับคู่ด้วยรหัสวิชา+ลำดับ
+    const used={},og=[];
+    O.forEach(o=>{const cand=r.data.filter(x=>x.subject_code==o[0]&&x.subject_name==o[1]&&!used[x.id])[0];used[cand.id]=1;o[2].forEach(g=>og.push({offering_id:cand.id,group_code:String(g)}))});
+    r=await sb.from('offering_groups').insert(og);if(r.error)throw r.error;
+    await load();render();
+  }catch(x){alert(errMsg(x));$('#seed').disabled=false}
+}
+
+// ===== สรุปรวม =====
+function sumView(){
+  let h='<div class="card"><h3 style="margin-top:0">สรุปรวมทุกวิชา</h3><div class="wrap"><table><tr><th class="l">วิชา</th><th class="l">ห้อง</th><th>นักศึกษา</th><th>รายการ</th><th>กรอกแล้ว</th><th>ยืนยันแล้ว</th><th>เฉลี่ย %</th><th>เกรดเฉลี่ย</th><th>ผ่าน</th><th>ไม่ผ่าน</th></tr>';
+  DB.offerings.slice().sort((a,b)=>a.subject_code.localeCompare(b.subject_code)).forEach(o=>rooms(o).forEach(c=>{
+    const ss=studs(c),cs=ss.map(s=>calc(o,s)).filter(x=>x.any),k=ss.filter(s=>isConf(o,s)).length;
+    const av=cs.length?cs.reduce((a,x)=>a+x.pct,0)/cs.length:null,gp=cs.length?cs.reduce((a,x)=>a+x.gr,0)/cs.length:null,ps=cs.filter(x=>x.gr>0).length;
+    h+=`<tr><td class="l"><a href="#" data-o="${o.id}">${e(o.subject_code+' '+o.subject_name)}</a></td><td class="l">${e(gname(c))} (${c})</td><td>${ss.length}</td><td>${tasksOf(o).length}</td><td>${cs.length}</td><td>${k}</td><td>${av==null?'-':n2(av)}</td><td>${gp==null?'-':n2(gp)}</td><td>${ps}</td><td>${cs.length-ps}</td></tr>`}));
+  $('#body').innerHTML=h+'</table></div></div>';
+  document.querySelectorAll('[data-o]').forEach(a=>a.onclick=ev=>{ev.preventDefault();view='off';curO=a.dataset.o;flt='all';render()});
+}
+
+// ===== จัดการนักศึกษา =====
+function stuView(){
+  const gs=DB.groups.slice().sort((a,b)=>a.code.localeCompare(b.code));
+  let h=`<div class="card noprint"><div class="row"><input id="nc" placeholder="รหัส 11 หลัก" inputmode="numeric"><input id="nn" placeholder="ชื่อ-นามสกุล" style="flex:1"><select id="ng">${gs.map(g=>`<option value="${g.code}">${e(gname(g.code))} (${g.code})</option>`).join('')}</select><button id="na">เพิ่ม</button></div></div>`;
+  gs.forEach(g=>{const ss=studs(g.code);h+=`<div class="card"><b>${e(gname(g.code))} (${g.code}) · ${ss.length} คน</b>${ss.map((s,i)=>`<div class="row" style="margin:4px 0"><span style="min-width:30px">${i+1}</span><span class="mut" style="min-width:100px">${s.student_code}</span><span style="flex:1">${e(s.full_name)}</span><button class="s" data-ed="${s.id}">✏️</button><button class="d" data-dl="${s.id}">🗑</button></div>`).join('')}</div>`});
+  $('#body').innerHTML=h;
+  $('#na').onclick=async()=>{const c=$('#nc').value.trim(),n=$('#nn').value.trim();if(!c||!n)return alert('กรอกรหัสและชื่อ');const{error}=await sb.from('students').insert({student_code:c,full_name:n,group_code:$('#ng').value});if(error)return alert(errMsg(error));await load();render()};
+  document.querySelectorAll('[data-ed]').forEach(b=>b.onclick=async()=>{const s=DB.students.find(x=>x.id==b.dataset.ed),n=prompt('แก้ชื่อ',s.full_name);if(!n)return;const{error}=await sb.from('students').update({full_name:n.trim()}).eq('id',s.id);if(error)return alert(errMsg(error));s.full_name=n.trim();render()});
+  document.querySelectorAll('[data-dl]').forEach(b=>b.onclick=async()=>{const s=DB.students.find(x=>x.id==b.dataset.dl);if(!confirm('ลบ '+s.full_name+' (คะแนนของคนนี้จะหายด้วย)?'))return;const{error}=await sb.from('students').delete().eq('id',s.id);if(error)return alert(errMsg(error));await load();render()});
+}
+
+// ===== หน้าวิชา =====
+function offView(){
+  const o=DB.offerings.find(x=>x.id==curO),rs=rooms(o),ts=tasksOf(o),gs=flt=='all'?rs:[flt];
+  const mx=ts.reduce((a,t)=>a+ +t.max_score,0);
+  let h=`<div class="card noprint"><div class="row"><b style="flex:1">${e(o.subject_code+' '+o.subject_name)}</b><label>แสดงกลุ่ม <select id="fl"><option value="all">ทั้งหมด</option>${rs.map(c=>`<option value="${c}">${e(gname(c))} (${c})</option>`).join('')}</select></label></div>
+  <details><summary><b>รายการคะแนน/งาน</b> · คะแนนเต็มรวม ${n2(mx)}</summary><div id="tl" style="margin-top:8px">${ts.map(t=>`<div class="row"><input data-tn="${t.id}" value="${e(t.name)}" style="flex:1;min-width:140px"><input data-tm="${t.id}" type="number" min="0" step="any" value="${t.max_score}" style="width:90px"><button class="d" data-td="${t.id}">ลบ</button></div>`).join('')}</div>
+  <div class="row"><input id="tnn" placeholder="ชื่องานใหม่" style="flex:1;min-width:140px"><input id="tnm" type="number" value="10" style="width:90px"><button id="tadd">+ เพิ่มรายการ</button><button class="s" id="tcp">คัดลอกรายการคะแนนไปทุกห้อง</button></div></details></div>
+  <div class="card noprint"><div class="stats" id="st"></div></div>
+  <div class="card"><div class="row noprint"><button id="sa">บันทึกทั้งหมด</button><button class="s" id="csv">ส่งออก CSV</button><button class="s" onclick="print()">🖨 พิมพ์</button></div><div class="wrap"><table><tr><th class="c1">ลำดับ</th><th class="c2">รหัส</th><th class="c3 l">ชื่อ-นามสกุล</th>${ts.map(t=>`<th><div class="v">${e(t.name)} (${t.max_score})</div></th>`).join('')}<th>รวม<br>(${n2(mx)})</th><th>ร้อยละ</th><th>เกรด</th><th class="noprint">สถานะ</th></tr>`;
+  const cs=ts.length+7;
+  gs.forEach(c=>{h+=`<tr class="band"><td colspan="${cs}">ห้อง ${e(gname(c))} (${c}) · ${studs(c).length} คน</td></tr>`;
+    studs(c).forEach((s,i)=>{const k=isConf(o,s);h+=`<tr data-s="${s.id}" class="${k?'ok':''}"><td class="c1">${i+1}</td><td class="c2">${s.student_code}</td><td class="c3 l">${e(s.full_name)}</td>${ts.map(t=>{const v=DB.scores[t.id+'|'+s.id];return`<td><input type="number" inputmode="decimal" min="0" max="${t.max_score}" step="any" data-t="${t.id}" data-s="${s.id}" value="${v==null?'':v}" ${k?'disabled':''}></td>`}).join('')}<td class="tot"></td><td class="pct"></td><td class="gr"></td><td class="noprint act"></td></tr>`})});
+  $('#body').innerHTML=h+'</table></div></div>';
+  $('#fl').value=flt;$('#fl').onchange=ev=>{flt=ev.target.value;offView()};
+  document.querySelectorAll('tr[data-s]').forEach(tr=>upd(o,tr));stats(o,gs);
+  const B=$('#body');
+  B.oninput=ev=>{const i=ev.target;if(!i.dataset.t)return;const t=DB.tasks.find(x=>x.id==i.dataset.t);let v=i.value===''?null:+i.value;if(v!=null&&(isNaN(v)||v<0))v=null;if(v!=null&&v>t.max_score){v=+t.max_score;i.value=v}
+    DB.scores[t.id+'|'+i.dataset.s]=v;enq({k:'s'+t.id+i.dataset.s,t:'s',r:{task_id:t.id,student_id:i.dataset.s,score:v}});upd(o,i.closest('tr'));stats(o,gs)};
+  B.onclick=ev=>{const b=ev.target.closest('[data-sv],[data-ed]');if(!b)return;const sid=b.dataset.sv||b.dataset.ed;setConf(o,sid,!!b.dataset.sv);offView()};
+  $('#sa').onclick=()=>{let n=0;gs.forEach(c=>studs(c).forEach(s=>{if(!isConf(o,s)&&calc(o,s).any){setConf(o,s.id,true);n++}}));if(!n)alert('ไม่มีรายการที่ต้องบันทึก');offView()};
+  $('#csv').onclick=()=>{const q=x=>'"'+String(x).replace(/"/g,'""')+'"';let r=[['ห้อง/กลุ่ม','ลำดับ','รหัส','ชื่อ',...ts.map(t=>t.name+' ('+t.max_score+')'),'รวม','ร้อยละ','เกรด','สถานะ']];
+    gs.forEach(c=>studs(c).forEach((s,i)=>{const x=calc(o,s);r.push([gname(c)+' ('+c+')',i+1,s.student_code,s.full_name,...ts.map(t=>DB.scores[t.id+'|'+s.id]??''),x.any?n2(x.tot):'',x.any?n2(x.pct):'',x.any?x.gr:'',isConf(o,s)?'บันทึกแล้ว':'ยังไม่ยืนยัน'])}));
+    dl(o.subject_code+'.csv','\ufeff'+r.map(a=>a.map(q).join(',')).join('\r\n'),'text/csv;charset=utf-8')};
+  // รายการคะแนน
+  document.querySelectorAll('[data-tn],[data-tm]').forEach(i=>i.onchange=()=>tEdit(o,i));
+  document.querySelectorAll('[data-td]').forEach(b=>b.onclick=async()=>{if(!confirm('ลบรายการนี้และคะแนนทั้งหมดของรายการ?'))return;const{error}=await sb.from('tasks').delete().eq('id',b.dataset.td);if(error)return alert(errMsg(error));await load();offView()});
+  $('#tadd').onclick=async()=>{const n=$('#tnn').value.trim();if(!n)return alert('ใส่ชื่องาน');const{error}=await sb.from('tasks').insert({offering_id:o.id,name:n,max_score:+$('#tnm').value||10,sort_order:ts.length});if(error)return alert(errMsg(error));await load();offView()};
+  $('#tcp').onclick=async()=>{if(!ts.length||!confirm('คัดลอกรายการคะแนนไปทุกห้อง/วิชาอื่น (ข้ามรายการที่ชื่อและคะแนนเต็มซ้ำ)?'))return;
+    const rows=[];DB.offerings.filter(x=>x.id!=o.id).forEach(x=>{const ex=tasksOf(x);ts.forEach(t=>{if(!ex.some(y=>y.name==t.name&&+y.max_score==+t.max_score))rows.push({offering_id:x.id,name:t.name,max_score:t.max_score,sort_order:ex.length+rows.filter(r=>r.offering_id==x.id).length})})});
+    if(!rows.length)return alert('ทุกห้องมีรายการครบแล้ว');const{error}=await sb.from('tasks').insert(rows);if(error)return alert(errMsg(error));await load();offView();alert('คัดลอก '+rows.length+' รายการ')};
+}
+async function tEdit(o,i){
+  const id=i.dataset.tn||i.dataset.tm,t=DB.tasks.find(x=>x.id==id),p={};
+  if(i.dataset.tn)p.name=i.value.trim();else{p.max_score=Math.max(0,+i.value||0)}
+  const{error}=await sb.from('tasks').update(p).eq('id',id);if(error)return alert(errMsg(error));
+  Object.assign(t,p);
+  if(p.max_score!=null){const fix=[];DB.students.forEach(s=>{const k=id+'|'+s.id,v=DB.scores[k];if(v!=null&&v>p.max_score){DB.scores[k]=p.max_score;fix.push({task_id:id,student_id:s.id,score:p.max_score})}});
+    if(fix.length){const r=await sb.from('scores').upsert(fix,{onConflict:'task_id,student_id'});if(r.error)alert(errMsg(r.error))}}
+  offView();
+}
+function setConf(o,sid,on){const r={offering_id:o.id,student_id:sid,confirmed:on,confirmed_at:on?new Date().toISOString():null};DB.conf[o.id+'|'+sid]=r;enq({k:'c'+o.id+sid,t:'c',r});flush()}
+function upd(o,tr){
+  const s=DB.students.find(x=>x.id==tr.dataset.s),x=calc(o,s),k=isConf(o,s),c=DB.conf[o.id+'|'+s.id];
+  tr.querySelector('.tot').textContent=x.any?n2(x.tot):'';tr.querySelector('.pct').textContent=x.any?n2(x.pct):'';tr.querySelector('.gr').textContent=x.any?x.gr:'';
+  tr.querySelector('.act').innerHTML=k?`<span class="tag">✓ บันทึกแล้ว ${c.confirmed_at?new Date(c.confirmed_at).toLocaleString('th-TH',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):''}</span> <button class="s" data-ed="${s.id}">✏️ แก้ไข</button>`:`<button data-sv="${s.id}" ${x.any?'':'disabled'}>💾 บันทึก</button>`;
+}
+function stats(o,gs){
+  const ss=gs.flatMap(studs),cs=ss.map(s=>calc(o,s)).filter(x=>x.any),mx=tasksOf(o).reduce((a,t)=>a+ +t.max_score,0);
+  const avg=cs.length?cs.reduce((a,x)=>a+x.tot,0)/cs.length:null,gp=cs.length?cs.reduce((a,x)=>a+x.gr,0)/cs.length:null;
+  const it=(b,l)=>`<div><b>${b}</b><span>${l}</span></div>`;
+  $('#st').innerHTML=it(ss.length,'นักศึกษา')+it(ss.filter(s=>isConf(o,s)).length+'/'+ss.length,'ยืนยันแล้ว')+it(n2(mx),'คะแนนเต็มรวม')+it(avg==null?'-':n2(avg),'ค่าเฉลี่ย')+it(gp==null?'-':n2(gp),'เกรดเฉลี่ย')+it(cs.length?n2(Math.max(...cs.map(x=>x.tot))):'-','สูงสุด')+it(cs.length?n2(Math.min(...cs.map(x=>x.tot))):'-','ต่ำสุด');
+}
+loginView();
+</script></body></html>
