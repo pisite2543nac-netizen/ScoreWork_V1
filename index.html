@@ -105,8 +105,8 @@ const isConf=(o,s)=>(DB.conf[o.id+'|'+s.id]||{}).confirmed;
 // ===== เข้าสู่ระบบ =====
 function loginView(msg){
   $('#out').hidden=true;$('#who').textContent='';
-  $('#app').innerHTML=`<div class="card login"><h2 style="margin:0">เข้าสู่ระบบ</h2><input id="em" type="email" placeholder="อีเมลครู" autocomplete="username"><input id="pw" type="password" placeholder="รหัสผ่าน" autocomplete="current-password"><button id="go">เข้าสู่ระบบ</button><div class="err" id="lm">${e(msg||'')}</div></div>`;
-  const go=async()=>{$('#lm').textContent='กำลังตรวจสอบ...';const{error}=await sb.auth.signInWithPassword({email:$('#em').value.trim(),password:$('#pw').value});if(error)$('#lm').textContent=/Invalid/i.test(error.message)?'อีเมลหรือรหัสผ่านไม่ถูกต้อง':errMsg(error)};
+  $('#app').innerHTML=`<div class="card login"><h2 style="margin:0">เข้าสู่ระบบ</h2><input id="em" type="text" placeholder="ชื่อผู้ใช้ (หรืออีเมล)" autocomplete="username" autocapitalize="off"><input id="pw" type="password" placeholder="รหัสผ่าน" autocomplete="current-password"><button id="go">เข้าสู่ระบบ</button><div class="err" id="lm">${e(msg||'')}</div></div>`;
+  const go=async()=>{$('#lm').textContent='กำลังตรวจสอบ...';const{error}=await sb.auth.signInWithPassword({email:(v=>v.includes('@')?v:v.toLowerCase()+'@scorework.local')($('#em').value.trim()),password:$('#pw').value});if(error)$('#lm').textContent=/Invalid/i.test(error.message)?'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง':errMsg(error)};
   $('#go').onclick=go;$('#pw').onkeydown=ev=>{if(ev.key=='Enter')go()};
 }
 $('#out').onclick=async()=>{await sb.auth.signOut()};
