@@ -2,13 +2,13 @@
 <html lang="th"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>ระบบบันทึกคะแนนนักศึกษา</title>
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="คะแนน"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="theme-color" content="#1d4ed8"><link rel="apple-touch-icon" href="apple-touch-icon.png"><title>ระบบบันทึกคะแนนนักศึกษา</title>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <style>
 :root{--bg:#f3f6fb;--card:#fff;--tx:#1b2433;--mut:#64708a;--pri:#1d4ed8;--bd:#d6deec;--ok:#dcfce7;--hd:#e8efff;--err:#b91c1c}
 @media(prefers-color-scheme:dark){:root{--bg:#0f1624;--card:#18223a;--tx:#e6ecf8;--mut:#93a0bd;--pri:#6b9bff;--bd:#2c3a5c;--ok:#12391f;--hd:#1f2d4d;--err:#f87171}}
-*{box-sizing:border-box}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html{-webkit-text-size-adjust:100%}
 body{margin:0;font-family:Sarabun,sans-serif;background:var(--bg);color:var(--tx);padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
 header{background:var(--pri);color:#fff;padding:10px 14px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 header b{font-size:18px;flex:1}header small{opacity:.9}
@@ -35,10 +35,21 @@ td input{width:62px;text-align:center;padding:6px}
 tr.band td{background:var(--hd)!important;text-align:left;font-weight:700;position:static}
 .tag{color:#15803d;font-size:13px}.mut{color:var(--mut);font-size:13px}.err{color:var(--err)}
 @media(max-width:700px){.c2{display:none}.c3{left:42px;min-width:130px}}
-@media print{header,.noprint{display:none!important}.wrap{max-height:none;overflow:visible}body{background:#fff;color:#000}}
+button,select,input{touch-action:manipulation}
+.cardr{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:10px;margin:8px 0}.cardr.ok{background:var(--ok)}
+.ch{display:flex;justify-content:space-between;gap:8px;font-weight:600;margin-bottom:8px}
+.cg{display:grid;grid-template-columns:1fr 1fr;gap:8px}.cg label{display:flex;flex-direction:column;font-size:14px;gap:2px}.cg input{width:100%;min-height:46px;text-align:center}
+.cf{display:flex;justify-content:space-around;margin:8px 0;background:var(--hd);border-radius:8px;padding:6px}
+.cardr .act{display:flex;justify-content:space-between;align-items:center;gap:8px}.cardr .act button{flex:1;min-height:46px}
+.bandc{background:var(--hd);padding:8px 10px;border-radius:8px;font-weight:700;margin-top:10px}
+@media(max-width:700px){header{position:sticky;top:0;z-index:10}header b{font-size:16px}main{padding:8px}button{min-height:46px}.row>button,.row>select{flex:1 1 140px}select,input{min-height:46px}.stats{grid-template-columns:repeat(2,1fr)}.card{padding:10px}}
+#kb{position:fixed;left:0;right:0;bottom:0;display:flex;gap:8px;align-items:center;padding:8px 10px calc(8px + env(safe-area-inset-bottom));background:var(--card);border-top:1px solid var(--bd);z-index:50;box-shadow:0 -2px 8px rgba(0,0,0,.15)}#kb[hidden]{display:none}#kn{flex:1;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--mut)}#kb button{min-width:64px}
+@media(max-width:700px){main{padding-bottom:80px}}
+@media print{#kb{display:none!important}header,.noprint{display:none!important}.wrap{max-height:none;overflow:visible}body{background:#fff;color:#000}}
 </style></head><body>
 <header><b>📘 ระบบบันทึกคะแนนนักศึกษา</b><small id="who"></small><small id="sync"></small><button id="out" hidden>ออกจากระบบ</button></header>
 <main id="app"></main>
+<div id="kb" hidden><button class="s" id="kp">◀</button><span id="kn"></span><button id="kx">ถัดไป ▶</button><button class="s" id="kd">เสร็จ</button></div>
 <script>
 // ====== ตั้งค่า (แก้ 2 บรรทัดนี้) ======
 const SUPABASE_URL='https://wlvhiyrsvaxfzkpitjct.supabase.co';
@@ -181,15 +192,16 @@ function offView(){
   <div class="row"><input id="tnn" placeholder="ชื่องานใหม่" style="flex:1;min-width:140px"><input id="tnm" type="number" value="10" style="width:90px"><button id="tadd">+ เพิ่มรายการ</button><button class="s" id="tcp">คัดลอกรายการคะแนนไปทุกห้อง</button></div></details></div>
   <div class="card noprint"><div class="stats" id="st"></div></div>
   <div class="card"><div class="row noprint"><button id="qt">➕ เพิ่มรายการคะแนน</button><button id="qs">👤 เพิ่มนักศึกษา (ย้อนหลัง)</button><button id="sa">บันทึกทั้งหมด</button><button class="s" id="csv">ส่งออก CSV</button><button class="s" onclick="print()">🖨 พิมพ์</button></div><div class="wrap"><table><tr><th class="c1">ลำดับ</th><th class="c2">รหัส</th><th class="c3 l">ชื่อ-นามสกุล</th>${ts.map(t=>`<th><div class="v">${e(t.name)} (${t.max_score})</div></th>`).join('')}<th>รวม<br>(${n2(mx)})</th><th>ร้อยละ</th><th>เกรด</th><th class="noprint">สถานะ</th></tr>`;
-  const cs=ts.length+7;
+  const mob=isMob(),cs=ts.length+7;
   gs.forEach(c=>{h+=`<tr class="band"><td colspan="${cs}">ห้อง ${e(gname(c))} (${c}) · ${studs(c).length} คน</td></tr>`;
-    studs(c).forEach((s,i)=>{const k=isConf(o,s);h+=`<tr data-s="${s.id}" class="${k?'ok':''}"><td class="c1">${i+1}</td><td class="c2">${s.student_code}</td><td class="c3 l">${e(s.full_name)}</td>${ts.map(t=>{const v=DB.scores[t.id+'|'+s.id];return`<td><input type="number" inputmode="decimal" min="0" max="${t.max_score}" step="any" data-t="${t.id}" data-s="${s.id}" value="${v==null?'':v}" ${k?'disabled':''}></td>`}).join('')}<td class="tot"></td><td class="pct"></td><td class="gr"></td><td class="noprint act"></td></tr>`})});
-  $('#body').innerHTML=h+'</table></div></div>';
+    studs(c).forEach((s,i)=>{const k=isConf(o,s);h+=`<tr data-s="${s.id}" class="rw ${k?'ok':''}"><td class="c1">${i+1}</td><td class="c2">${s.student_code}</td><td class="c3 l">${e(s.full_name)}</td>${ts.map(t=>{const v=DB.scores[t.id+'|'+s.id];return`<td><input type="number" inputmode="decimal" min="0" max="${t.max_score}" step="any" data-t="${t.id}" data-s="${s.id}" value="${v==null?'':v}" ${k?'disabled':''}></td>`}).join('')}<td class="tot"></td><td class="pct"></td><td class="gr"></td><td class="noprint act"></td></tr>`})});
+  $('#body').innerHTML=mob?h.slice(0,h.indexOf('<div class="wrap"><table>'))+cards(o,ts,gs)+'</div>':h+'</table></div></div>';
   $('#fl').value=flt;$('#fl').onchange=ev=>{flt=ev.target.value;offView()};
-  document.querySelectorAll('tr[data-s]').forEach(tr=>upd(o,tr));stats(o,gs);
+  document.querySelectorAll('.rw').forEach(tr=>upd(o,tr));stats(o,gs);
   const B=$('#body');
   B.oninput=ev=>{const i=ev.target;if(!i.dataset.t)return;const t=DB.tasks.find(x=>x.id==i.dataset.t);let v=i.value===''?null:+i.value;if(v!=null&&(isNaN(v)||v<0))v=null;if(v!=null&&v>t.max_score){v=+t.max_score;i.value=v}
-    DB.scores[t.id+'|'+i.dataset.s]=v;enq({k:'s'+t.id+i.dataset.s,t:'s',r:{task_id:t.id,student_id:i.dataset.s,score:v}});upd(o,i.closest('tr'));stats(o,gs)};
+    DB.scores[t.id+'|'+i.dataset.s]=v;enq({k:'s'+t.id+i.dataset.s,t:'s',r:{task_id:t.id,student_id:i.dataset.s,score:v}});upd(o,i.closest('.rw'));stats(o,gs)};
+  B.onkeydown=ev=>{if(ev.key!='Enter'||!ev.target.dataset.t)return;ev.preventDefault();const a=[...B.querySelectorAll('input[data-t]:not(:disabled)')],n=a[a.indexOf(ev.target)+1];if(n){n.focus();n.select()}};
   B.onclick=ev=>{const b=ev.target.closest('[data-sv],[data-ed]');if(!b)return;const sid=b.dataset.sv||b.dataset.ed;setConf(o,sid,!!b.dataset.sv);offView()};
   $('#qt').onclick=async()=>{const n=(prompt('ชื่อรายการคะแนน/งาน')||'').trim();if(!n)return;const m=parseFloat(prompt('คะแนนเต็ม','10'));if(isNaN(m)||m<0)return alert('คะแนนเต็มไม่ถูกต้อง');const{error}=await sb.from('tasks').insert({offering_id:o.id,name:n,max_score:m,sort_order:ts.length});if(error)return alert(errMsg(error));await load();offView()};
   $('#qs').onclick=async()=>{let g=rs[0];if(rs.length>1){const k=parseInt(prompt('เลือกห้อง พิมพ์เลข:\n'+rs.map((c,i)=>(i+1)+'. '+gname(c)+' ('+c+')').join('\n')),10);if(!rs[k-1])return;g=rs[k-1]}
@@ -207,6 +219,10 @@ function offView(){
     const rows=[];DB.offerings.filter(x=>x.id!=o.id).forEach(x=>{const ex=tasksOf(x);ts.forEach(t=>{if(!ex.some(y=>y.name==t.name&&+y.max_score==+t.max_score))rows.push({offering_id:x.id,name:t.name,max_score:t.max_score,sort_order:ex.length+rows.filter(r=>r.offering_id==x.id).length})})});
     if(!rows.length)return alert('ทุกห้องมีรายการครบแล้ว');const{error}=await sb.from('tasks').insert(rows);if(error)return alert(errMsg(error));await load();offView();alert('คัดลอก '+rows.length+' รายการ')};
 }
+const isMob=()=>matchMedia('(max-width:700px)').matches;let lastMob=isMob();
+addEventListener('resize',()=>{const m=isMob();if(m!=lastMob){lastMob=m;if(user&&view=='off')offView()}});
+function cards(o,ts,gs){let h='';gs.forEach(c=>{h+=`<div class="bandc">ห้อง ${e(gname(c))} (${c}) · ${studs(c).length} คน</div>`;
+  studs(c).forEach((s,i)=>{const k=isConf(o,s);h+=`<div class="rw cardr ${k?'ok':''}" data-s="${s.id}"><div class="ch"><span>${i+1}. ${e(s.full_name)}</span><span class="mut">${s.student_code}</span></div><div class="cg">${ts.map(t=>{const v=DB.scores[t.id+'|'+s.id];return`<label>${e(t.name)} <small class="mut">เต็ม ${t.max_score}</small><input type="number" inputmode="decimal" enterkeyhint="next" min="0" max="${t.max_score}" step="any" data-t="${t.id}" data-s="${s.id}" value="${v==null?'':v}" ${k?'disabled':''}></label>`}).join('')}</div><div class="cf"><span>รวม <b class="tot"></b></span><span>ร้อยละ <b class="pct"></b></span><span>เกรด <b class="gr"></b></span></div><div class="act"></div></div>`})});return h}
 async function tEdit(o,i){
   const id=i.dataset.tn||i.dataset.tm,t=DB.tasks.find(x=>x.id==id),p={};
   if(i.dataset.tn)p.name=i.value.trim();else{p.max_score=Math.max(0,+i.value||0)}
@@ -228,5 +244,13 @@ function stats(o,gs){
   const it=(b,l)=>`<div><b>${b}</b><span>${l}</span></div>`;
   $('#st').innerHTML=it(ss.length,'นักศึกษา')+it(ss.filter(s=>isConf(o,s)).length+'/'+ss.length,'ยืนยันแล้ว')+it(n2(mx),'คะแนนเต็มรวม')+it(avg==null?'-':n2(avg),'ค่าเฉลี่ย')+it(gp==null?'-':n2(gp),'เกรดเฉลี่ย')+it(cs.length?n2(Math.max(...cs.map(x=>x.tot))):'-','สูงสุด')+it(cs.length?n2(Math.min(...cs.map(x=>x.tot))):'-','ต่ำสุด');
 }
+const kb=$('#kb'),inps=()=>[...document.querySelectorAll('input[data-t]:not(:disabled)')];
+function kbPos(){const v=window.visualViewport;if(v)kb.style.bottom=Math.max(0,innerHeight-v.height-v.offsetTop)+'px'}
+if(window.visualViewport)['resize','scroll'].forEach(x=>visualViewport.addEventListener(x,kbPos));
+document.addEventListener('focusin',ev=>{const i=ev.target;if(!(i.matches&&i.matches('input[data-t]'))||!isMob())return;const t=DB.tasks.find(x=>x.id==i.dataset.t),r=i.closest('.rw');$('#kn').textContent=(r?r.querySelector('.ch span').textContent:'')+' · '+(t?t.name:'');kb.hidden=false;kbPos()});
+document.addEventListener('focusout',()=>setTimeout(()=>{const a=document.activeElement;if(!(a&&a.matches&&a.matches('input[data-t]')))kb.hidden=true},200));
+kb.addEventListener('pointerdown',ev=>ev.preventDefault());
+const go2=d=>{const a=inps(),n=a[a.indexOf(document.activeElement)+d];if(n){n.focus();n.select();n.scrollIntoView({block:'center'})}};
+$('#kx').onclick=()=>go2(1);$('#kp').onclick=()=>go2(-1);$('#kd').onclick=()=>{if(document.activeElement)document.activeElement.blur();kb.hidden=true};
 loginView();
 </script></body></html>
